@@ -1,0 +1,88 @@
+services:
+  secrets-init:
+    image: alpine:3.20
+    command: >
+      sh -c '
+        set -eu;
+        gen() { head -c 32 /dev/urandom | base64 | tr -d "\n"; };
+        mkdir -p /run/secrets;
+        if [ ! -s /run/secrets/mariadb_root_password ]; then
+          gen > /run/secrets/mariadb_root_password;
+        fi
+        if [ ! -s /run/secrets/moodle_db_password ]; then
+          gen > /run/secrets/moodle_db_password;
+        fi
+        chmod 0400 /run/secrets/mariadb_root_password /run/secrets/moodle_db_password;
+      '
+    volumes:
+      - secrets:/run/secrets
+    restart: "no"
+    networks:
+      - backend
+
+  mariadb:
+    image: ${MARIADB_IMAGE:-mariadb:11.4}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-moodle}
+      MARIADB_USER: ${MARIADB_USER:-moodle}
+      MARIADB_PASSWORD_FILE: /run/secrets/moodle_db_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - secrets:/run/secrets:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -p\"$(cat /run/secrets/mariadb_root_password)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  moodle:
+    build:
+      context: .
+      dockerfile: docker/moodle/Dockerfile
+      args:
+        PHP_BASE_IMAGE: ${MOODLE_PHP_BASE_IMAGE:-php:8.3-apache}
+        MOODLE_RELEASE_URL: ${MOODLE_RELEASE_URL:-https://packaging.moodle.org/stable501/moodle-5.1.1.tgz}
+        MOODLE_RELEASE_SHA256: ${MOODLE_RELEASE_SHA256:-27c94522c3c3e3598e612632500bb5e4385de7c6fe268bd977c6f25705ca5ac1}
+    environment:
+      MOODLE_DB_HOST: mariadb
+      MOODLE_DB_NAME: ${MARIADB_DATABASE:-moodle}
+      MOODLE_DB_USER: ${MARIADB_USER:-moodle}
+      MOODLE_DB_PASSWORD_FILE: /run/secrets/moodle_db_password
+      MOODLE_DATA_DIR: /var/www/moodledata
+    volumes:
+      - moodledata:/var/www/moodledata
+      - secrets:/run/secrets:ro
+    ports:
+      - "${MOODLE_HTTP_PORT:-8080}:80"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/login/index.php"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - backend
+      - frontend
+
+volumes:
+  mariadb_data:
+  moodledata:
+  secrets:
+
+networks:
+  backend:
+    internal: true
+  frontend:

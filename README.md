@@ -1,34 +1,44 @@
 # docker-moodle-STACK-goemaxima
 
-Minimal Docker Compose for Moodle + MariaDB + STACK (goemaxima), with pinned versions and CI-validated updates.
-Custom Moodle image is built from a pinned PHP base plus a Moodle release tarball and baked-in STACK plugin.
+Minimal Docker Compose for Moodle + MariaDB, with pinned versions and a custom Moodle image.
+STACK (goemaxima) will be added next; this first milestone focuses on Moodle + MariaDB only.
 
 ## Quickstart
-1) `cp .env.example .env`
-2) Edit `.env` (see categories below).
-3) `docker compose build`
-4) `docker compose up -d`
-5) Run the init scripts in this order:
+1) `docker compose build`
+2) `docker compose up -d`
+3) Copy `.env.example` to `.env` (see below!) and set at least:
+   - `MOODLE_ADMIN_EMAIL`
+   - `MOODLE_ADMIN_PASSWORD`
+   - (optional) `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_SITE_URL`
+4) Run the automated installer:
    - `./init/scripts/moodle-init.sh`
-   - `./init/scripts/stack-install.sh`
-   - `./init/scripts/stack-configure.sh`
-   - `./init/scripts/smoke-tests.sh`
+5) Open `http://localhost:8080` and log in with your admin credentials.
 
 ## Configuration
 
-Exact variable names live in `.env.example`. Expect categories:
-- Moodle admin credentials and email
-- Moodle site URL (for reverse proxy later)
-- Database name/user/password
-- Optional STACK config overrides (if needed)
+In the local `.env` override defaults in `docker-compose.yml`, if needed.
+Common overrides:
+- `MARIADB_DATABASE`, `MARIADB_USER`
+- `MOODLE_HTTP_PORT`
+- `MOODLE_PHP_BASE_IMAGE`, `MOODLE_RELEASE_URL`, `MOODLE_RELEASE_SHA256`
+- `MOODLE_SITE_URL`, `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`
+- `MOODLE_ADMIN_USER`, `MOODLE_ADMIN_EMAIL`, `MOODLE_ADMIN_PASSWORD`
 
-No secrets are committed to the repo.
+Site name notes:
+- `MOODLE_SITE_FULLNAME` shows in the site header and admin pages.
+- `MOODLE_SITE_SHORTNAME` is used in navigation and course listings.
+
+Database passwords are generated at startup by the `secrets-init` service
+and stored in the `secrets` named volume. They are removed when you run
+`docker compose down -v`.
+
+If you change database charset/collation settings, recreate the DB volume:
+`docker compose down -v` then `docker compose up -d`.
 
 ## What runs where
 - `moodle` is a custom image built from `php:<version>-apache` + Moodle release tarball.
 - `mariadb` uses the official MariaDB image and is internal-only (no host port).
-- `maxima` uses `mathinstitut/goemaxima` and is internal-only (no host port).
-- Moodle reaches goemaxima at `http://maxima:8080/goemaxima`.
+- `maxima`/STACK are planned but not wired yet in this milestone.
 
 ## Supported versions (initial proposal)
 - Moodle 5.1.1 (tarball + SHA256 from Moodle packaging site)
@@ -56,8 +66,7 @@ This repo assumes `ghcr.io/catthehacker/ubuntu:act-latest` is available on your 
 
 ## Troubleshooting
 - First start can take time; check `docker compose logs` for progress.
-- If STACK does not appear, confirm `stack-install.sh` ran successfully.
-- If CAS tests fail, verify the goemaxima URL and container health.
+- STACK/goemaxima notes will be added when that phase lands.
 
 ## Read-only goal
 The Moodle code tree should be read-only at runtime, but this is just a goal until validated.
