@@ -23,15 +23,17 @@ MOODLE_ADMIN_USER="${MOODLE_ADMIN_USER:-admin}"
 MARIADB_DATABASE="${MARIADB_DATABASE:-moodle}"
 MARIADB_USER="${MARIADB_USER:-moodle}"
 
+sync_config() {
+  docker compose exec -T -u www-data moodle sh -c \
+    'cp /var/www/html/config.php /var/www/moodledata/config.php && chmod 0640 /var/www/moodledata/config.php'
+}
+
 if docker compose exec -T moodle test -f /var/www/html/config.php; then
-  if docker compose exec -T -u www-data moodle test -r /var/www/html/config.php; then
-    echo "Moodle already configured (config.php exists)."
-    exit 0
-  fi
-  echo "Fixing config.php ownership for www-data."
-  docker compose exec -T moodle chown www-data:www-data /var/www/html/config.php
-  docker compose exec -T moodle chmod 0640 /var/www/html/config.php
-  exit 0
+  echo "Removing existing config.php to force a fresh install."
+  docker compose exec -T moodle rm -f /var/www/html/config.php
+fi
+if docker compose exec -T moodle test -f /var/www/moodledata/config.php; then
+  docker compose exec -T moodle rm -f /var/www/moodledata/config.php
 fi
 
 DB_PASS="$(docker compose exec -T moodle cat /run/secrets/moodle_db_password | tr -d '\r\n')"
@@ -51,3 +53,8 @@ docker compose exec -T -u www-data moodle php /var/www/html/admin/cli/install.ph
   --adminuser="${MOODLE_ADMIN_USER}" \
   --adminpass="${MOODLE_ADMIN_PASSWORD}" \
   --adminemail="${MOODLE_ADMIN_EMAIL}"
+
+docker compose exec -T moodle chown www-data:www-data /var/www/html/config.php
+docker compose exec -T moodle chmod 0640 /var/www/html/config.php
+docker compose exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php --non-interactive
+sync_config

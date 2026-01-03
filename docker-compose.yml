@@ -45,6 +45,11 @@ services:
     networks:
       - backend
 
+  maxima:
+    image: ${GOEMAXIMA_IMAGE:-mathinstitut/goemaxima:2025102100-1.2.0}
+    networks:
+      - backend
+
   moodle:
     build:
       context: .
@@ -53,6 +58,14 @@ services:
         PHP_BASE_IMAGE: ${MOODLE_PHP_BASE_IMAGE:-php:8.3-apache}
         MOODLE_RELEASE_URL: ${MOODLE_RELEASE_URL:-https://packaging.moodle.org/stable501/moodle-5.1.1.tgz}
         MOODLE_RELEASE_SHA256: ${MOODLE_RELEASE_SHA256:-27c94522c3c3e3598e612632500bb5e4385de7c6fe268bd977c6f25705ca5ac1}
+        STACK_PLUGIN_URL: ${MOODLE_STACK_PLUGIN_URL:-https://github.com/maths/moodle-qtype_stack/archive/refs/tags/v4.11.0.zip}
+        STACK_PLUGIN_SHA256: ${MOODLE_STACK_PLUGIN_SHA256:-c20afdbbbd32926d954effa1a68da83d4780d2b65b15041cf31df711d400fbb0}
+        STACK_BEHAVIOUR_DFEXPLICIT_URL: ${MOODLE_STACK_BEHAVIOUR_DFEXPLICIT_URL:-https://github.com/maths/moodle-qbehaviour_dfexplicitvaildate/archive/refs/tags/v4.2.2.zip}
+        STACK_BEHAVIOUR_DFEXPLICIT_SHA256: ${MOODLE_STACK_BEHAVIOUR_DFEXPLICIT_SHA256:-}
+        STACK_BEHAVIOUR_DFCBMEXPLICIT_URL: ${MOODLE_STACK_BEHAVIOUR_DFCBMEXPLICIT_URL:-https://github.com/maths/moodle-qbehaviour_dfcbmexplicitvaildate/archive/refs/tags/v4.2.2.zip}
+        STACK_BEHAVIOUR_DFCBMEXPLICIT_SHA256: ${MOODLE_STACK_BEHAVIOUR_DFCBMEXPLICIT_SHA256:-}
+        STACK_BEHAVIOUR_ADAPTIVEMULTIPART_URL: ${MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_URL:-https://github.com/maths/moodle-qbehaviour_adaptivemultipart/archive/refs/tags/v4.3.8.zip}
+        STACK_BEHAVIOUR_ADAPTIVEMULTIPART_SHA256: ${MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_SHA256:-}
     environment:
       MOODLE_DB_HOST: mariadb
       MOODLE_DB_NAME: ${MARIADB_DATABASE:-moodle}
@@ -76,6 +89,31 @@ services:
     networks:
       - backend
       - frontend
+
+  moodle-cron:
+    build:
+      context: .
+      dockerfile: docker/moodle/Dockerfile
+      args:
+        PHP_BASE_IMAGE: ${MOODLE_PHP_BASE_IMAGE:-php:8.3-apache}
+        MOODLE_RELEASE_URL: ${MOODLE_RELEASE_URL:-https://packaging.moodle.org/stable501/moodle-5.1.1.tgz}
+        MOODLE_RELEASE_SHA256: ${MOODLE_RELEASE_SHA256:-27c94522c3c3e3598e612632500bb5e4385de7c6fe268bd977c6f25705ca5ac1}
+        STACK_PLUGIN_URL: ${MOODLE_STACK_PLUGIN_URL:-https://github.com/maths/moodle-qtype_stack/archive/refs/tags/v4.11.0.zip}
+        STACK_PLUGIN_SHA256: ${MOODLE_STACK_PLUGIN_SHA256:-c20afdbbbd32926d954effa1a68da83d4780d2b65b15041cf31df711d400fbb0}
+        STACK_BEHAVIOUR_DFEXPLICIT_URL: ${MOODLE_STACK_BEHAVIOUR_DFEXPLICIT_URL:-https://github.com/maths/moodle-qbehaviour_dfexplicitvaildate/archive/refs/tags/v4.2.2.zip}
+        STACK_BEHAVIOUR_DFEXPLICIT_SHA256: ${MOODLE_STACK_BEHAVIOUR_DFEXPLICIT_SHA256:-}
+        STACK_BEHAVIOUR_DFCBMEXPLICIT_URL: ${MOODLE_STACK_BEHAVIOUR_DFCBMEXPLICIT_URL:-https://github.com/maths/moodle-qbehaviour_dfcbmexplicitvaildate/archive/refs/tags/v4.2.2.zip}
+        STACK_BEHAVIOUR_DFCBMEXPLICIT_SHA256: ${MOODLE_STACK_BEHAVIOUR_DFCBMEXPLICIT_SHA256:-}
+        STACK_BEHAVIOUR_ADAPTIVEMULTIPART_URL: ${MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_URL:-https://github.com/maths/moodle-qbehaviour_adaptivemultipart/archive/refs/tags/v4.3.8.zip}
+        STACK_BEHAVIOUR_ADAPTIVEMULTIPART_SHA256: ${MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_SHA256:-}
+    command: ["cron", "-f"]
+    volumes:
+      - moodledata:/var/www/moodledata
+    depends_on:
+      moodle:
+        condition: service_healthy
+    networks:
+      - backend
 
 volumes:
   mariadb_data:

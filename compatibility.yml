@@ -1,0 +1,28 @@
+# Supported tuples and compatibility notes.
+# - Pin tags to avoid surprise upgrades.
+# - Bump one axis at a time (Moodle, STACK, DB).
+# - STACK must match goemaxima mapping; update both together.
+
+tuples:
+  - id: "moodle51-stack411-maxima2025102100-1.2.0"
+    moodle:
+      line: "5.1"
+      release: "5.1.1"
+      php_base: "php:8.3-apache"
+    mariadb: "11.4"
+    stack:
+      version: "4.11.0"
+      plugin_version: "2025102100"
+      source: "github-tag"
+      companion_plugins:
+        - "qbehaviour_dfexplicitvaildate"
+        - "qbehaviour_dfcbmexplicitvaildate"
+        - "qbehaviour_adaptivemultipart"
+    goemaxima:
+      image: "mathinstitut/goemaxima:2025102100-1.2.0"
+      endpoint: "http://maxima:8080/goemaxima"
+
+notes:
+  - "Moodle code tree read-only is a goal; validate before enforcing."
+  - "MariaDB and goemaxima are internal-only (no host ports)."
+  - "STACK source is pinned to a GitHub tag archive; behaviour plugin checksums are pending."
