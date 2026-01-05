@@ -57,4 +57,6 @@ docker compose exec -T -u www-data moodle php /var/www/html/admin/cli/install.ph
 docker compose exec -T moodle chown www-data:www-data /var/www/html/config.php
 docker compose exec -T moodle chmod 0640 /var/www/html/config.php
 docker compose exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php --non-interactive
+docker compose exec -T moodle php /var/www/html/admin/cli/cfg.php --component=core --name=cron_enabled --set=1
+docker compose exec -T moodle php /var/www/html/admin/cli/purge_caches.php
 sync_config

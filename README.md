@@ -11,9 +11,12 @@ with pinned versions and a custom Moodle image.
    - `MOODLE_ADMIN_PASSWORD`
    - (optional) `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_SITE_URL`
    - (optional) `MOODLE_STACK_BEHAVIOUR_*` URLs once chosen
+   - (optional) STACK settings in `.env` if you want to auto-configure STACK
 4) Run the automated installer:
    - `./init/scripts/moodle-init.sh`
-5) Open `http://localhost:8080` and log in with your admin credentials.
+5) Configure STACK + noreply email (optional but recommended):
+   - `./init/scripts/stack-init.sh`
+6) Open `http://localhost:8080` and log in with your admin credentials.
 
 ## Configuration
 
@@ -24,8 +27,11 @@ Common overrides:
 - `MOODLE_PHP_BASE_IMAGE`, `MOODLE_RELEASE_URL`, `MOODLE_RELEASE_SHA256`
 - `MOODLE_SITE_URL`, `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`
 - `MOODLE_ADMIN_USER`, `MOODLE_ADMIN_EMAIL`, `MOODLE_ADMIN_PASSWORD`
+- `MOODLE_NOREPLY_EMAIL`
 - `MOODLE_STACK_PLUGIN_URL`, `MOODLE_STACK_PLUGIN_SHA256`
 - `MOODLE_STACK_BEHAVIOUR_*_URL`, `MOODLE_STACK_BEHAVIOUR_*_SHA256`
+- `MOODLE_STACK_MAXIMAVERSION`, `MOODLE_STACK_MAXIMACOMMAND`, `MOODLE_STACK_MAXIMACOMMANDOPT`
+- `MOODLE_STACK_MAXIMACOMMANDSERVER`, `MOODLE_STACK_MAXIMALIBRARIES`
 - `GOEMAXIMA_IMAGE`
 
 Site name notes:
@@ -67,6 +73,8 @@ plugin checksums are still pending confirmation.
 - Companion behaviour plugin checksums are intentionally left blank for now; fill them once you fetch the archives.
 - After installation, configure STACK to use goemaxima at `http://maxima:8080/goemaxima`
   (fallback `http://maxima:8080/maxima`) in the Moodle admin UI.
+- To automate STACK settings + the noreply email, run `./init/scripts/stack-init.sh`
+  after filling the `MOODLE_STACK_MAXIMA*` and `MOODLE_NOREPLY_EMAIL` values in `.env`.
 
 ## Local CI with `act`
 

@@ -70,7 +70,7 @@ RUN set -eu; \
     { \
       echo "SHELL=/bin/sh"; \
       echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"; \
-      echo "* * * * * www-data /usr/local/bin/moodle-cron.sh >/proc/1/fd/1 2>/proc/1/fd/2"; \
+      echo "* * * * * root su -s /bin/sh -c '/usr/local/bin/moodle-cron.sh' www-data >/proc/1/fd/1 2>/proc/1/fd/2"; \
     } > /etc/cron.d/moodle; \
     chmod 0644 /etc/cron.d/moodle
 
