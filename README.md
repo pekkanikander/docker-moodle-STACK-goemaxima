@@ -76,6 +76,8 @@ plugin checksums are still pending confirmation.
 - To automate STACK settings + the noreply email, run `./init/scripts/stack-init.sh`
   after filling the `MOODLE_STACK_MAXIMA*` and `MOODLE_NOREPLY_EMAIL` values in `.env`.
 
+**NOTE! The following are Work in Progress, not there yet**
+
 ## Local CI with `act`
 
 Use `tools/act-ci.sh` to run the GitHub Actions workflow locally; tested only with macOS 15.7.
