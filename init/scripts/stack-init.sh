@@ -10,6 +10,10 @@ set -a
 . ./.env
 set +a
 
+log() {
+  echo "$@"
+}
+
 require_nonempty() {
   name="$1"
   value="$2"
@@ -37,10 +41,12 @@ require_set "MOODLE_STACK_MAXIMACOMMAND"
 require_set "MOODLE_STACK_MAXIMACOMMANDOPT"
 require_set "MOODLE_STACK_MAXIMALIBRARIES"
 
+log "Setting Moodle noreply address."
 docker compose exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --name=noreplyaddress \
   --set="${MOODLE_NOREPLY_EMAIL}"
 
+log "Setting STACK configuration."
 docker compose exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --component=qtype_stack \
   --name=maximaversion \
@@ -62,4 +68,5 @@ docker compose exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --name=maximalibraries \
   --set="${MOODLE_STACK_MAXIMALIBRARIES}"
 
+log "Purging Moodle caches."
 docker compose exec -T moodle php /var/www/html/admin/cli/purge_caches.php

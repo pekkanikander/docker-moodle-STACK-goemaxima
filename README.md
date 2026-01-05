@@ -83,6 +83,12 @@ plugin checksums are still pending confirmation.
 Use `tools/act-ci.sh` to run the GitHub Actions workflow locally; tested only with macOS 15.7.
 This repo assumes `ghcr.io/catthehacker/ubuntu:act-latest` is available on your hardware.
 
+## Smoke tests
+Run the current verification suite after install/config:
+```
+./init/scripts/smoke-tests.sh
+```
+
 ## Clean rebuild
 If you need a pristine rebuild (wipe containers, volumes, and image cache), run:
 ```
