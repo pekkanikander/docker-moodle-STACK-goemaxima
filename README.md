@@ -33,6 +33,7 @@ Common overrides:
 - `MOODLE_STACK_MAXIMAVERSION`, `MOODLE_STACK_MAXIMACOMMAND`, `MOODLE_STACK_MAXIMACOMMANDOPT`
 - `MOODLE_STACK_MAXIMACOMMANDSERVER`, `MOODLE_STACK_MAXIMALIBRARIES`
 - `GOEMAXIMA_IMAGE`
+- `DOCKER_COMPOSE_ARGS` (extra arguments passed to `docker compose` by init scripts)
 
 Site name notes:
 - `MOODLE_SITE_FULLNAME` shows in the site header and admin pages.

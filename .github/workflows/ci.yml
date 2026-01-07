@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    tags: ["*"]
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare env
+        run: cp .env.example .env
+
+      - name: Clean rebuild
+        run: ./tools/clean-rebuild.sh
+
+      - name: Smoke tests
+        run: ./init/scripts/smoke-tests.sh
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --no-color
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v --remove-orphans

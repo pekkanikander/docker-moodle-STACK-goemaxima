@@ -1,10 +1,12 @@
 #!/bin/sh
 set -eu
 
-docker compose down -v --remove-orphans
-docker compose rm -fsv
+. ./init/scripts/init-env.sh
+
+dc down -v --remove-orphans
+dc rm -fsv
 docker image prune -f
-docker compose build --no-cache --pull
-docker compose up -d --force-recreate
+dc build --no-cache --pull
+dc up -d --force-recreate
 ./init/scripts/moodle-init.sh
 ./init/scripts/stack-init.sh

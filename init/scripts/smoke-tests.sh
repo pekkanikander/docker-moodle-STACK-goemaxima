@@ -1,11 +1,7 @@
 #!/bin/sh
 set -eu
 
-if [ -f ./.env ]; then
-  set -a
-  . ./.env
-  set +a
-fi
+. ./init/scripts/init-env.sh
 
 MOODLE_HTTP_PORT="${MOODLE_HTTP_PORT:-8080}"
 
@@ -16,7 +12,7 @@ if ! curl -fsS "http://localhost:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null
 fi
 
 echo "Checking STACK plugin registration..."
-docker compose exec -T moodle php -r '
+dc exec -T moodle php -r '
 define("CLI_SCRIPT", true);
 require "/var/www/html/config.php";
 require_once "$CFG->dirroot/lib/classes/component.php";
@@ -38,7 +34,7 @@ if ($errors) {
 '
 
 echo "Checking STACK settings and noreply address..."
-docker compose exec -T moodle php -r '
+dc exec -T moodle php -r '
 define("CLI_SCRIPT", true);
 require "/var/www/html/config.php";
 $errors = [];
@@ -66,10 +62,10 @@ if ($errors) {
 '
 
 echo "Checking goemaxima endpoint..."
-if docker compose exec -T moodle curl -fsS http://maxima:8080/goemaxima >/dev/null; then
+if dc exec -T moodle curl -fsS http://maxima:8080/goemaxima >/dev/null; then
   exit 0
 fi
-if docker compose exec -T moodle curl -fsS http://maxima:8080/maxima >/dev/null; then
+if dc exec -T moodle curl -fsS http://maxima:8080/maxima >/dev/null; then
   echo "WARN: goemaxima responded at /maxima instead of /goemaxima" >&2
   exit 0
 fi
