@@ -14,8 +14,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ensure yq is available
+        run: |
+          if command -v yq >/dev/null 2>&1; then
+            yq --version
+            exit 0
+          fi
+          YQ_VERSION="v4.50.1"
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) yq_arch="amd64" ;;
+            aarch64|arm64) yq_arch="arm64" ;;
+            *)
+              echo "Unsupported architecture: ${arch}" >&2
+              exit 1
+              ;;
+          esac
+          url="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${yq_arch}"
+          tmp="$(mktemp)"
+          curl -fsSL "$url" -o "$tmp"
+          if command -v sudo >/dev/null 2>&1; then
+            sudo install -m 0755 "$tmp" /usr/local/bin/yq
+          else
+            install -m 0755 "$tmp" /usr/local/bin/yq
+          fi
+          rm -f "$tmp"
+          yq --version
+
       - name: Prepare env
-        run: cp .env.example .env
+        run: |
+          set -eu
+          ./tools/update-versions.sh ./.env.versions
+          if [ -f .env.ci ]; then
+            cat .env.versions .env.example .env.ci > .env
+          else
+            cat .env.versions .env.example > .env
+          fi
 
       - name: Clean rebuild
         run: ./tools/clean-rebuild.sh
@@ -31,4 +65,4 @@ jobs:
 
       - name: Teardown
         if: always()
-        run: docker compose down -v --remove-orphans
+        run: docker compose down

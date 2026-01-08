@@ -1,2 +1,4 @@
 .env
+.env.versions
+.env.ci
 .DS_Store

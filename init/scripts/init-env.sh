@@ -6,7 +6,13 @@ if [ ! -f ./.env ]; then
   exit 1
 fi
 
+if [ ! -f ./.env.versions ]; then
+  echo "Missing .env.versions. Run ./tools/update-versions.sh to generate it." >&2
+  exit 1
+fi
+
 set -a
+. ./.env.versions
 . ./.env
 set +a
 

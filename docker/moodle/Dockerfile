@@ -1,5 +1,5 @@
-ARG PHP_BASE_IMAGE=php:8.3-apache
-FROM ${PHP_BASE_IMAGE}
+ARG MOODLE_PHP_BASE_IMAGE=php:8.3-apache
+FROM ${MOODLE_PHP_BASE_IMAGE}
 
 ARG MOODLE_RELEASE_URL
 ARG MOODLE_RELEASE_SHA256
@@ -97,9 +97,6 @@ RUN set -eu; \
       url="$1"; \
       sha="$2"; \
       target="$3"; \
-      if [ -z "$url" ]; then \
-        return 0; \
-      fi; \
       tmpdir="$(mktemp -d)"; \
       case "$url" in \
         *.zip) \

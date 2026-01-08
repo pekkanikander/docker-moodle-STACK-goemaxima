@@ -13,9 +13,6 @@ require_nonempty "MOODLE_ADMIN_PASSWORD" "${MOODLE_ADMIN_PASSWORD:-}"
 require_nonempty "MOODLE_ADMIN_EMAIL" "${MOODLE_ADMIN_EMAIL:-}"
 require_nonempty "MOODLE_NOREPLY_EMAIL" "${MOODLE_NOREPLY_EMAIL:-}"
 
-MARIADB_DATABASE="${MARIADB_DATABASE:-moodle}"
-MARIADB_USER="${MARIADB_USER:-moodle}"
-
 if dc exec -T moodle test -f /var/www/html/config.php; then
   log "Removing existing config.php to force a fresh install."
   dc exec -T moodle rm -f /var/www/html/config.php
@@ -38,8 +35,8 @@ dc exec -T -u www-data moodle php /var/www/html/admin/cli/install.php \
   --dataroot="/var/www/moodledata" \
   --dbtype="mariadb" \
   --dbhost="mariadb" \
-  --dbname="${MARIADB_DATABASE}" \
-  --dbuser="${MARIADB_USER}" \
+  --dbname="moodle" \
+  --dbuser="moodle" \
   --dbpass="${DB_PASS}" \
   --fullname="${MOODLE_SITE_FULLNAME}" \
   --shortname="${MOODLE_SITE_SHORTNAME}" \
