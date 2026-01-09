@@ -47,8 +47,8 @@ require_set() {
 
 dc() {
   if [ -n "${DOCKER_COMPOSE_ARGS:-}" ]; then
-    docker compose ${DOCKER_COMPOSE_ARGS} "$@"
+    docker compose --env-file .env.versions --env-file .env ${DOCKER_COMPOSE_ARGS} "$@"
   else
-    docker compose "$@"
+    docker compose --env-file .env.versions --env-file .env "$@"
   fi
 }
