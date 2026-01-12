@@ -21,7 +21,14 @@ services:
       - backend
 
   mariadb:
-    image: ${MARIADB_IMAGE?Set MARIADB_IMAGE}
+    image: docker-moodle-stack-goemaxima-mariadb
+    build:
+      context: .
+      dockerfile: docker/mariadb/Dockerfile
+      args:
+        MARIADB_IMAGE: ${MARIADB_IMAGE?Set MARIADB_IMAGE}
+        MARIADB_UID: ${MARIADB_UID:-2001}
+        MARIADB_GID: ${MARIADB_GID:-2001}
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci

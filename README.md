@@ -32,6 +32,7 @@ Common overrides:
 - `MOODLE_ADMIN_USER`
 Less common overrides:
 - `DOCKER_COMPOSE_ARGS` (extra arguments passed to `docker compose` by init scripts)
+- `MARIADB_UID`, `MARIADB_GID` (override mysql UID/GID inside the image for bind mounts)
 - `MOODLE_STACK_MAXIMAVERSION`, `MOODLE_STACK_MAXIMACOMMAND`, `MOODLE_STACK_MAXIMACOMMANDOPT`
 - `MOODLE_STACK_MAXIMACOMMANDSERVER`, `MOODLE_STACK_MAXIMALIBRARIES`
 - `MOODLE_STACK_PLATFORM`
@@ -54,7 +55,7 @@ If you change database charset/collation settings, recreate the DB volume:
 
 ## What runs where
 - `moodle` is a custom image built from `php:<version>-apache` + Moodle release tarball.
-- `mariadb` uses the official MariaDB image and is internal-only (no host port).
+- `mariadb` is a custom image derived from the official MariaDB image and is internal-only (no host port).
 - `maxima` uses the goemaxima image and is internal-only (no host port).
 - `STACK` is baked into the Moodle image from a pinned GitHub tag archive.
 - `moodle-cron` runs Moodle's CLI cron every minute in a separate container.
