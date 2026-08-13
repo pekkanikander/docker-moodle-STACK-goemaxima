@@ -4,6 +4,7 @@ Purpose: guide LLM/coding agents working in this repo.
 
 ## Project goal
 Build an OSS Docker Compose setup for Moodle + MariaDB + goemaxima (STACK), with pinned versions, CI validation, and safe updates.
+The setup serves exam drilling and question-interpretation training for a homeschooled learner (Finnish peruskoulu physics/chemistry, later maths); see `ROADMAP.md`.
 
 ## Core rules
 - Prefer pinned tags (optionally digests); avoid `latest`.
@@ -24,7 +25,9 @@ Build an OSS Docker Compose setup for Moodle + MariaDB + goemaxima (STACK), with
 - `docker/moodle/Dockerfile` for the custom Moodle build (Moodle + STACK).
 - `.github/workflows/ci.yml` for end-to-end CI.
 - `README.md` for quickstart and update policy.
+- `ROADMAP.md` for milestones and current priorities.
 - `tools/act-ci.sh` for local CI via `act`.
+- `infra/hetzner/` for VM provisioning (cloud-init, hcloud helper); plan in `hetzner-hosting-task.md`.
 
 ## Workflow guidance
 - We are in an early pre-alpha stage. Prefer regenerating everything from scratch. There are no precious data, yet.
