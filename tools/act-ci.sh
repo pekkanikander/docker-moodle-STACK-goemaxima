@@ -14,7 +14,7 @@ fi
 image="ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest"
 
 if [ "$#" -eq 0 ]; then
-  exec act -W .github/workflows/ci.yml -P "$image" --container-architecture linux/amd64 workflow_dispatch
+  exec act -W .github/workflows/ci.yml -P "$image" --container-architecture linux/amd64 --bind workflow_dispatch
 fi
 
-exec act -P "$image" --container-architecture linux/amd64 "$@"
+exec act -P "$image" --container-architecture linux/amd64 --bind "$@"

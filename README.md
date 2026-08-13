@@ -11,13 +11,15 @@ with pinned versions and a custom Moodle image.
    - `MOODLE_ADMIN_EMAIL`
    - `MOODLE_ADMIN_PASSWORD`
    - (optional) `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_SITE_URL`
+   - (optional) `MOODLE_PERSISTENT_ROOT` (set a local path if you don't have `/srv/moodle-persistent`)
+   - For local dev, set `MOODLE_SITE_URL` to `http://localhost:${MOODLE_HTTP_PORT}`
 4) `docker compose build`
 5) `docker compose up -d`
 6) Run the automated installer:
    - `./init/scripts/moodle-init.sh`
 7) Configure STACK (optional but recommended):
    - `./init/scripts/stack-init.sh`
-8) Open `http://localhost:8080` and log in with your admin credentials.
+8) Open `http://localhost:${MOODLE_HTTP_PORT}` and log in with your admin credentials.
 
 ## Configuration
 
@@ -30,6 +32,7 @@ Common overrides:
 - `MOODLE_SITE_URL`, `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`
 - `MOODLE_ADMIN_EMAIL`
 - `MOODLE_ADMIN_USER`
+- `MOODLE_PERSISTENT_ROOT` (bind-mount root for moodledata and mariadb)
 Less common overrides:
 - `DOCKER_COMPOSE_ARGS` (extra arguments passed to `docker compose` by init scripts)
 - `MARIADB_UID`, `MARIADB_GID` (override mysql UID/GID inside the image for bind mounts)
@@ -53,12 +56,26 @@ and stored in the `secrets` named volume. They are removed when you run
 If you change database charset/collation settings, recreate the DB volume:
 `docker compose down -v` then `docker compose up -d`.
 
+## Persistent data (bind mounts)
+The database and moodledata live under `MOODLE_PERSISTENT_ROOT` as bind mounts:
+```
+${MOODLE_PERSISTENT_ROOT}/
+  mariadb/
+  moodledata/
+  backups/db/
+```
+This data persists across `docker compose down -v` (only the `secrets` volume is removed).
+To wipe local data, delete the directory or use `./tools/clean-rebuild.sh`:
+- If `MOODLE_PERSISTENT_ROOT` is a relative path, `clean-rebuild` will wipe it.
+- If it is an absolute path, set `PURGE_PERSISTENT=1` to wipe it.
+
 ## What runs where
 - `moodle` is a custom image built from `php:<version>-apache` + Moodle release tarball.
 - `mariadb` is a custom image derived from the official MariaDB image and is internal-only (no host port).
 - `maxima` uses the goemaxima image and is internal-only (no host port).
 - `STACK` is baked into the Moodle image from a pinned GitHub tag archive.
 - `moodle-cron` runs Moodle's CLI cron every minute in a separate container.
+- `moodle` HTTP is bound to `127.0.0.1:${MOODLE_HTTP_PORT}` for use behind a host reverse proxy.
 
 In this setup, Apache serves `/var/www/html/public` and Moodle's `$CFG->dirroot` resolves
 to `/var/www/html/public`. When installing plugins manually, place them under the
@@ -87,6 +104,7 @@ companion behaviour plugin checksums are still pending confirmation.
 Use `tools/act-ci.sh` to run the GitHub Actions workflow locally; tested only with macOS 15.7.
 This repo assumes `ghcr.io/catthehacker/ubuntu:act-latest` is available on your hardware.
 CI runs on PRs, tags, releases, and manual dispatch; `act-ci.sh` uses amd64 emulation.
+`act-ci.sh` uses `--bind` so bind-mounted persistent paths work.
 
 The CI run creates `.env` by concatenating `.env.versions`, `.env.example` and `.env.ci`,
 if there is one.  That `.env` is used only by the CI run; it doesn't change your local
@@ -108,6 +126,9 @@ If you need a pristine rebuild (rebuilds without cache and prunes dangling image
 ```
 ./tools/clean-rebuild.sh
 ```
+`clean-rebuild` also resets bind-mounted data for relative `MOODLE_PERSISTENT_ROOT` values,
+so CI and local runs don't reuse stale DB data with new secrets. For absolute paths, set
+`PURGE_PERSISTENT=1` to wipe the persistent root.
 
 ## Updates
 - Versions are pinned in `versions.yml`.
@@ -117,7 +138,7 @@ If you need a pristine rebuild (rebuilds without cache and prunes dangling image
 **NOTE! The following are Work in Progress, not there yet**
 
 ## Backups
-- Back up the MariaDB volume and `moodledata` volume.
+- Back up the MariaDB and `moodledata` directories under `MOODLE_PERSISTENT_ROOT`.
 - Test restores by bringing up fresh containers and verifying Moodle starts and data is present.
 
 ## Troubleshooting

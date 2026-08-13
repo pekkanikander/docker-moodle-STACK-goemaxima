@@ -38,7 +38,7 @@ services:
       MARIADB_USER: moodle
       MARIADB_PASSWORD_FILE: /run/secrets/moodle_db_password
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - ${MOODLE_PERSISTENT_ROOT:-/srv/moodle-persistent}/mariadb:/var/lib/mysql
       - secrets:/run/secrets:ro
     healthcheck:
       test: ["CMD-SHELL", "mariadb-admin ping -h localhost -p\"$(cat /run/secrets/mariadb_root_password)\""]
@@ -81,10 +81,10 @@ services:
       MOODLE_DB_PASSWORD_FILE: /run/secrets/moodle_db_password
       MOODLE_DATA_DIR: /var/www/moodledata
     volumes:
-      - moodledata:/var/www/moodledata
+      - ${MOODLE_PERSISTENT_ROOT:-/srv/moodle-persistent}/moodledata:/var/www/moodledata
       - secrets:/run/secrets:ro
     ports:
-      - "${MOODLE_HTTP_PORT:-8080}:80"
+      - "127.0.0.1:${MOODLE_HTTP_PORT:-8080}:80"
     depends_on:
       mariadb:
         condition: service_healthy
@@ -102,7 +102,7 @@ services:
     image: docker-moodle-stack-goemaxima-moodle
     command: ["cron", "-f"]
     volumes:
-      - moodledata:/var/www/moodledata
+      - ${MOODLE_PERSISTENT_ROOT:-/srv/moodle-persistent}/moodledata:/var/www/moodledata
     depends_on:
       moodle:
         condition: service_healthy
@@ -110,8 +110,6 @@ services:
       - backend
 
 volumes:
-  mariadb_data:
-  moodledata:
   secrets:
 
 networks:

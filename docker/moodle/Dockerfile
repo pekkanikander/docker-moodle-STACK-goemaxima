@@ -62,6 +62,10 @@ COPY docker/moodle/apache-moodle.conf /etc/apache2/sites-available/moodle.conf
 COPY docker/moodle/moodle-cron.sh /usr/local/bin/moodle-cron.sh
 
 RUN set -eu; \
+    echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf; \
+    a2enconf servername
+
+RUN set -eu; \
     a2dissite 000-default; \
     a2ensite moodle
 
