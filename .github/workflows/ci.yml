@@ -41,6 +41,9 @@ jobs:
           rm -f "$tmp"
           yq --version
 
+      - name: Infra script tests
+        run: ./infra/hetzner/tests/run-tests.sh
+
       - name: Prepare env
         run: |
           set -eu

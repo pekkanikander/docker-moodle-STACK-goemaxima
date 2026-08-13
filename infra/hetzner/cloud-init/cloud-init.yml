@@ -1,0 +1,213 @@
+#cloud-config
+#
+# Hetzner bootstrap for Moodle + STACK + Maxima host
+#
+# Design goals (baseline):
+# - Create admin user with SSH key auth
+# - Disable root SSH login + password authentication
+# - Keep systemd socket activation for SSH, listening on:
+#     - 22   (can be firewalled off at Hetzner later)
+#     - 33101 (primary SSH port to expose)
+# - Install Docker + Compose plugin
+# - Prepare persistent storage root at /srv/moodle-persistent and bind-mount
+#   Hetzner Volume automatic mount (/mnt/HC_Volume_*) to that stable path.
+# - Create a minimal Caddy install placeholder (Caddy config handled separately)
+# - Enable unattended security upgrades (OS-level)
+#
+# NOTE: This file is intended to be passed as Hetzner “user-data” at VM creation.
+# cloud-init generally runs only on first boot.
+#
+# NOTE ON KEYS:
+# Replace the placeholders below before use, e.g. via a small wrapper script.
+#
+# NOTE ON OUTBOUND EMAIL:
+# Not configured here; explicitly out-of-scope for now.
+
+groups:
+  - name: mariadb
+    gid: 2001
+
+hostname: moodle
+manage_etc_hosts: true
+
+# Create the primary admin user.
+# - If you prefer a different username than "admin", change it here.
+users:
+  - name: admin
+    shell: /bin/bash
+    groups: [sudo, docker]
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      # TODO: replace with your real SSH public key.
+      # Example:
+      # - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your@laptop"
+      - "${ADMIN_SSH_PUBKEY}"
+
+  - name: mariadb
+    uid: 2001
+    gid: 2001
+    shell: /usr/sbin/nologin
+    system: true
+
+# Keep root account, but disable root login via SSH.
+# (This does not remove root; it prevents direct SSH login.)
+disable_root: true
+
+# Do not allow password auth for SSH.
+ssh_pwauth: false
+
+package_update: true
+package_upgrade: true
+
+packages:
+  # Base tooling
+  - ca-certificates
+  - curl
+  - gnupg
+  - jq
+  - rsync
+  - git
+
+  # Security / ops
+  - unattended-upgrades
+
+  # Docker (Ubuntu packages; sufficient for this project).
+  # NOTE: the compose v2 plugin is packaged as "docker-compose-v2" in Ubuntu;
+  # "docker-compose-plugin" exists only in Docker's own apt repo.
+  - docker.io
+  - docker-compose-v2
+
+  # Caddy: on Ubuntu, the "caddy" package may require an additional repo.
+  # We attempt to install later in runcmd (idempotent).
+
+write_files:
+  # SSH hardening policy in a drop-in (Ubuntu style).
+  - path: /etc/ssh/sshd_config.d/99-hardening.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      # Managed by cloud-init
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      ChallengeResponseAuthentication no
+      UsePAM yes
+      X11Forwarding no
+
+      # Optional tightening (uncomment if desired):
+      # MaxAuthTries 3
+      # LoginGraceTime 20
+
+  # Override ssh.socket to listen on both ports.
+  # systemd socket activation owns the listeners; sshd_config "Port" lines become secondary.
+  - path: /etc/systemd/system/ssh.socket.d/override.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Socket]
+      # Reset inherited list, then define explicit listeners.
+      ListenStream=
+      ListenStream=0.0.0.0:22
+      ListenStream=[::]:22
+      ListenStream=0.0.0.0:33101
+      ListenStream=[::]:33101
+
+  # Optional: small helper to find the Hetzner auto-mounted volume and bind-mount it.
+  - path: /usr/local/sbin/bind-hetzner-volume
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      # Find first auto-mounted Hetzner Volume directory.
+      vol_dir=""
+      for d in /mnt/HC_Volume_*; do
+        if [ -d "$d" ]; then
+          vol_dir="$d"
+          break
+        fi
+      done
+
+      if [ -z "$vol_dir" ]; then
+        echo "No /mnt/HC_Volume_* directory found. Is the Volume attached with automount?" >&2
+        exit 1
+      fi
+
+      mkdir -p /srv/moodle-persistent
+
+      # Bind-mount Volume root to stable path.
+      if ! mountpoint -q /srv/moodle-persistent; then
+        mount --bind "$vol_dir" /srv/moodle-persistent
+      fi
+
+      # Persist bind mount across reboot.
+      if ! grep -qE '^/mnt/HC_Volume_[0-9]+\s+/srv/moodle-persistent\s+none\s+bind' /etc/fstab; then
+        echo "$vol_dir /srv/moodle-persistent none bind 0 0" >> /etc/fstab
+      fi
+
+      # Create standard persistent directories with explicit ownership and modes.
+      # These are non-recursive and safe on first boot (directories are empty).
+
+      # Moodledata: writable by www-data (UID:GID 33:33), setgid so files keep group.
+      install -d -o 33 -g 33 -m 2770 /srv/moodle-persistent/moodledata
+
+      # MariaDB: owned by mariadb (UID:GID 2001:2001), not group/world writable.
+      install -d -o 2001 -g 2001 -m 0750 /srv/moodle-persistent/mariadb
+
+      # Backup directory: root-owned by default.
+      mkdir -p /srv/moodle-persistent/backups/db
+
+  # Minimal unattended-upgrades configuration.
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root:root
+    permissions: '0644'
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+runcmd:
+  # Ensure docker group exists and user is in it (cloud-init user module usually handles this).
+  - [ bash, -lc, "getent group docker >/dev/null || groupadd docker" ]
+
+  # Enable Docker.
+  - [ bash, -lc, "systemctl enable --now docker" ]
+
+  # Activate SSH via socket and ensure no standalone ssh daemon mode conflicts.
+  - [ bash, -lc, "systemctl daemon-reload" ]
+  - [ bash, -lc, "systemctl disable --now ssh || true" ]
+  - [ bash, -lc, "systemctl enable --now ssh.socket" ]
+  - [ bash, -lc, "systemctl restart ssh.socket" ]
+  - [ bash, -lc, "systemctl reload ssh || true" ]
+
+  # Install Caddy if available; otherwise add official repo and install.
+  # This is written to be safe to re-run.
+  - |
+      set -e
+      if ! command -v caddy >/dev/null 2>&1; then
+        if apt-cache show caddy >/dev/null 2>&1; then
+          apt-get update
+          apt-get install -y caddy
+        else
+          # Add official Caddy apt repo (Cloudsmith). If this ever changes,
+          # adjust in this repo and recreate the VM.
+          apt-get update
+          apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
+          curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+          curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+          apt-get update
+          apt-get install -y caddy
+        fi
+      fi
+
+  # Bind-mount Hetzner Volume (if attached) to /srv/moodle-persistent.
+  - [ bash, -lc, "/usr/local/sbin/bind-hetzner-volume" ]
+
+final_message: |
+  cloud-init complete.
+  Admin user: admin (SSH key only; password auth disabled)
+  SSH ports (socket activation): 22 and 33101 (firewall should expose only 33101)
+  Persistent root: /srv/moodle-persistent (bind-mounted from /mnt/HC_Volume_*)
+  Docker enabled.
+  Caddy installed (configure separately).
