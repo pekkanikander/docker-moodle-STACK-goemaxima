@@ -2,3 +2,5 @@
 .env.versions
 .env.ci
 .DS_Store
+.ci-persistent/
+.vscode/
