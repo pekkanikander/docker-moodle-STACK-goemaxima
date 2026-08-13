@@ -53,5 +53,7 @@ require_value "MOODLE_STACK_BEHAVIOUR_DFCBMEXPLICIT_URL" '.stack_behaviour_plugi
 allow_empty "MOODLE_STACK_BEHAVIOUR_DFCBMEXPLICIT_SHA256" '.stack_behaviour_plugin_sha256.qbehaviour_dfcbmexplicitvaildate'
 require_value "MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_URL" '.stack_behaviour_plugin_urls.qbehaviour_adaptivemultipart'
 allow_empty "MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_SHA256" '.stack_behaviour_plugin_sha256.qbehaviour_adaptivemultipart'
+require_value "MOODLE_STACK_QBANK_IMPORTASVERSION_URL" '.stack_qbank_plugin_urls.qbank_importasversion'
+allow_empty "MOODLE_STACK_QBANK_IMPORTASVERSION_SHA256" '.stack_qbank_plugin_sha256.qbank_importasversion'
 
 mv "$tmp" "$output"

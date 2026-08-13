@@ -27,6 +27,10 @@ foreach (["dfexplicitvaildate", "dfcbmexplicitvaildate", "adaptivemultipart"] as
     $errors[] = "qbehaviour_" . $p . " not registered. Found behaviours: " . implode(", ", array_keys($qb));
   }
 }
+$qbank = core_component::get_plugin_list("qbank");
+if (!isset($qbank["importasversion"])) {
+  $errors[] = "qbank_importasversion not registered. Found qbank plugins: " . implode(", ", array_keys($qbank));
+}
 if ($errors) {
   fwrite(STDERR, implode("\n", $errors) . "\n");
   exit(1);

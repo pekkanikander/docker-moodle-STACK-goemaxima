@@ -6,15 +6,18 @@ with pinned versions and a custom Moodle image.
 ## Quickstart
 0) Install `yq` if you don't have it installed
 1) Run `./tools/update-versions.sh` to update/generate `.env.versions`
-2) Run `cat .env.example .env.versions > .env` to set up default environment
+2) Run `cp .env.example .env` to set up the default environment.
+   Do not copy `.env.versions` content into `.env`: the tooling layers both files
+   (`.env` after `.env.versions`), so stale pins in `.env` would silently override
+   freshly generated versions.
 3) Set in `.env` at least:
    - `MOODLE_ADMIN_EMAIL`
    - `MOODLE_ADMIN_PASSWORD`
    - (optional) `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_SITE_URL`
    - (optional) `MOODLE_PERSISTENT_ROOT` (set a local path if you don't have `/srv/moodle-persistent`)
    - For local dev, set `MOODLE_SITE_URL` to `http://localhost:${MOODLE_HTTP_PORT}`
-4) `docker compose build`
-5) `docker compose up -d`
+4) `docker compose --env-file .env.versions --env-file .env build`
+5) `docker compose --env-file .env.versions --env-file .env up -d`
 6) Run the automated installer:
    - `./init/scripts/moodle-init.sh`
 7) Configure STACK (optional but recommended):
@@ -43,6 +46,7 @@ Version overrides, if you want to set something else than in `versions.yml` and 
 - `MOODLE_PHP_BASE_IMAGE`, `MOODLE_RELEASE_URL`, `MOODLE_RELEASE_SHA256`
 - `MOODLE_STACK_PLUGIN_URL`, `MOODLE_STACK_PLUGIN_SHA256`
 - `MOODLE_STACK_BEHAVIOUR_*_URL`, `MOODLE_STACK_BEHAVIOUR_*_SHA256`
+- `MOODLE_STACK_QBANK_IMPORTASVERSION_URL`, `MOODLE_STACK_QBANK_IMPORTASVERSION_SHA256`
 - `GOEMAXIMA_IMAGE`
 
 Site name notes:
@@ -85,15 +89,15 @@ to `/var/www/html/public`. When installing plugins manually, place them under th
 
 Pinned versions live in `versions.yml` (single source of truth).
 
-STACK plugin source is pinned to a GitHub tag archive with a recorded checksum;
-companion behaviour plugin checksums are still pending confirmation.
+STACK plugin source is pinned to a GitHub tag archive with a recorded checksum,
+as are the companion behaviour plugins.
 
 ## STACK/goemaxima setup notes
 
 - STACK is installed at build time from `MOODLE_STACK_PLUGIN_URL` (GitHub tag archive).
-- Companion behaviour plugins are installed by default from GitHub tag archives:
-  `qbehaviour_dfexplicitvaildate`, `qbehaviour_dfcbmexplicitvaildate`, `qbehaviour_adaptivemultipart`.
-- Companion behaviour plugin checksums are intentionally left blank for now; fill them once you fetch the archives.
+- Companion plugins are installed from GitHub tag archives with recorded checksums:
+  `qbehaviour_dfexplicitvaildate`, `qbehaviour_dfcbmexplicitvaildate`, `qbehaviour_adaptivemultipart`,
+  and `qbank_importasversion` (required by STACK >= 4.13).
 - After installation, configure STACK to use goemaxima at `http://maxima:8080/goemaxima`
   (fallback `http://maxima:8080/maxima`) in the Moodle admin UI.
 - To automate STACK settings, run `./init/scripts/stack-init.sh`
