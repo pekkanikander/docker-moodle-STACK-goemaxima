@@ -4,15 +4,15 @@
 # - STACK must match goemaxima mapping; update both together.
 
 tuples:
-  - id: "moodle51-stack4131-maxima2026062900-1.2.0"
+  - id: "moodle51-stack4130-maxima2026062900-1.2.0"
     moodle:
       line: "5.1"
       release: "5.1.6"
       php_base: "php:8.3-apache"
     mariadb: "mariadb:11.4"
     stack:
-      version: "4.13.1"
-      plugin_version: "2026080600"
+      version: "4.13.0"
+      plugin_version: "2026062900"
       source: "github-tag"
       companion_plugins:
         - "qbehaviour_dfexplicitvaildate"
