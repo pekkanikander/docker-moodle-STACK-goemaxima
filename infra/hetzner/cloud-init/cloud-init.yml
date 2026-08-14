@@ -154,8 +154,10 @@ write_files:
       # MariaDB: owned by mariadb (UID:GID 2001:2001), not group/world writable.
       install -d -o 2001 -g 2001 -m 0750 /srv/moodle-persistent/mariadb
 
-      # Backup directory: root-owned by default.
-      mkdir -p /srv/moodle-persistent/backups/db
+      # Backups: written by root (systemd timer), read by admin (restore,
+      # MBP pull); other users must not reach the dumps.
+      install -d -o root -g admin -m 0750 /srv/moodle-persistent/backups \
+        /srv/moodle-persistent/backups/db
 
   # Auto-login admin on the local console (which on this VM is only the
   # Hetzner web console, itself behind Hetzner account authentication).
