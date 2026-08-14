@@ -80,6 +80,12 @@ packages:
   # Caddy: on Ubuntu, the "caddy" package may require an additional repo.
   # We attempt to install later in runcmd (idempotent).
 
+# yq (mikefarah v4) is needed by tools/update-versions.sh on the VM.
+# Ubuntu's apt "yq" is an incompatible Python reimplementation; the snap is the real one.
+snap:
+  commands:
+    - snap install yq
+
 write_files:
   # SSH hardening policy in a drop-in (Ubuntu style).
   - path: /etc/ssh/sshd_config.d/99-hardening.conf

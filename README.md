@@ -135,6 +135,10 @@ If you need a pristine rebuild (rebuilds without cache and prunes dangling image
 so CI and local runs don't reuse stale DB data with new secrets. For absolute paths, set
 `PURGE_PERSISTENT=1` to wipe the persistent root.
 
+## Hosting
+Production hosting (Hetzner VM, Caddy TLS, `oivus.pnr.iki.fi`) is documented in
+`infra/hetzner/DEPLOY.md`; the underlying plan is `hetzner-hosting-task.md`.
+
 ## Updates
 - Versions are pinned in `versions.yml`.
 - `compatibility.yml` captures supported tuples and upgrade notes.

@@ -47,6 +47,15 @@ dc exec -T -u www-data moodle php /var/www/html/admin/cli/install.php \
 log "Fixing config.php permissions."
 dc exec -T moodle chown www-data:www-data /var/www/html/config.php
 dc exec -T moodle chmod 0640 /var/www/html/config.php
+case "${MOODLE_SITE_URL}" in
+  https://*)
+    # TLS terminates at the host reverse proxy; without sslproxy Moodle
+    # sees plain HTTP and redirect-loops against the https wwwroot.
+    log "Enabling sslproxy in config.php."
+    dc exec -T moodle sh -c \
+      'grep -q "^\$CFG->sslproxy" /var/www/html/config.php || sed -i "s/^require_once/\$CFG->sslproxy = true;\n&/" /var/www/html/config.php'
+    ;;
+esac
 log "Running Moodle CLI upgrade."
 dc exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php \
   --non-interactive

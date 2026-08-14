@@ -1,0 +1,15 @@
+# Caddy reverse proxy for Moodle. Deploy to /etc/caddy/Caddyfile on the VM.
+#
+# - TLS certificates via automatic Let's Encrypt (HTTP-01); port 80 must stay open.
+# - HTTP -> HTTPS redirect is automatic in Caddy.
+# - No HSTS until go-live is stable (hetzner-hosting-task.md Phase 3).
+
+oivus.pnr.iki.fi {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}

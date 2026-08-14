@@ -26,7 +26,8 @@ interpretation choice, with the scaffolding faded over time.
 
 - [x] Fix provisioning defects: `hcloud-create.sh` missing `--image`/`--type`,
       firewall never created, `docker-compose-plugin` not in Ubuntu repos.
-- [ ] Caddyfile and on-VM runtime layout (`/opt/moodle-stack`), documented.
+- [x] Caddyfile and on-VM runtime layout (`/opt/moodle-stack`), documented
+      (`infra/hetzner/caddy/Caddyfile`, `infra/hetzner/DEPLOY.md`).
 - [ ] Provision VM (Console/hcloud + cloud-init), DNS A+AAAA for
       `oivus.pnr.iki.fi` (zone `pnr.iki.fi` at easyDNS), TLS via Caddy.
 - [ ] Manual, documented deploy (`ssh; git fetch; checkout tag; compose up -d`).
