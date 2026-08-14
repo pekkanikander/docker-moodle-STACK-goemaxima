@@ -1,7 +1,8 @@
 # Go-live runbook: Hetzner VM for oivus.pnr.iki.fi
 
 Concrete steps for hetzner-hosting-task.md Phases 1–4. Run the macOS steps from
-the repo root. Deployment is manual by design (Phase 6 automation is deferred).
+the repo root. Cloud-init automates everything up to (but excluding) the `.env`
+secrets and the init scripts.
 
 ## 1. One-time macOS preparation
 
@@ -35,9 +36,14 @@ Notes:
 - Port 22 is blocked by the Hetzner firewall; SSH becomes reachable on **33101
   only after cloud-init finishes** (several minutes). If locked out, use the
   Console's web terminal (">_" icon on the server page).
-- Cloud-init creates user `admin` (key-only, passwordless sudo), hardens sshd,
-  installs Docker + compose v2 + Caddy + yq, and bind-mounts the volume to
-  `/srv/moodle-persistent`.
+- Cloud-init creates user `admin` (key-only, passwordless sudo; auto-login on
+  the Hetzner web console), hardens sshd, installs Docker + compose v2 + Caddy
+  + yq, bind-mounts the volume to `/srv/moodle-persistent`, clones this repo to
+  `/opt/moodle-stack`, installs the Caddy vhost, and builds/pulls the images
+  (`server-bootstrap.sh`). This takes a while; `cloud-init status --wait` on
+  the VM tells when it is done.
+- The create script also drops stale `~/.ssh/known_hosts` entries for the
+  server's DNS name and IPs (a recreated server has new host keys).
 
 ## 3. DNS at easyDNS
 
@@ -62,16 +68,10 @@ ls -l /srv/moodle-persistent    # moodledata/ mariadb/ backups/
 If `/srv/moodle-persistent` is missing (volume attach raced cloud-init), run
 `sudo /usr/local/sbin/bind-hetzner-volume` and re-check.
 
-## 5. Caddy
+## 5. Verify Caddy
 
-From macOS:
-
-```sh
-scp infra/hetzner/caddy/Caddyfile moodle-hetzner:/tmp/Caddyfile
-ssh moodle-hetzner 'sudo install -m 0644 -o root -g root /tmp/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy'
-```
-
-Caddy fetches the certificate on first request; verify from macOS:
+Cloud-init installed the vhost; Caddy fetches the certificate on first
+request. Verify from macOS:
 
 ```sh
 curl -I http://oivus.pnr.iki.fi     # 308 redirect to https
@@ -80,21 +80,10 @@ curl -I https://oivus.pnr.iki.fi   # 502 until Moodle is up; no certificate warn
 
 ## 6. Deploy the stack
 
-On the VM (`ssh moodle-hetzner`):
+Cloud-init cloned the repo to `/opt/moodle-stack`, generated `.env.versions`,
+seeded `.env` from `.env.example` (site URL preset) and built the images.
 
-```sh
-sudo install -d -o admin -g admin /opt/moodle-stack
-git clone https://github.com/pekkanikander/docker-moodle-STACK-goemaxima.git /opt/moodle-stack
-cd /opt/moodle-stack
-git checkout <tag>                 # pick the release tag; main while pre-alpha
-./tools/update-versions.sh
-cp .env.example .env
-```
-
-Edit `.env` (nano or vi):
-- `MOODLE_SITE_URL=https://oivus.pnr.iki.fi`
-- `MOODLE_HTTP_PORT=8080` (must match the Caddyfile upstream)
-- `MOODLE_PERSISTENT_ROOT=/srv/moodle-persistent`
+On the VM (`ssh moodle-hetzner`), edit `/opt/moodle-stack/.env` (nano or vi):
 - `MOODLE_ADMIN_EMAIL`, `MOODLE_ADMIN_PASSWORD` (real values; the password is
   the actual admin login)
 - `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_NOREPLY_EMAIL`
@@ -102,15 +91,18 @@ Edit `.env` (nano or vi):
 Then:
 
 ```sh
-docker compose --env-file .env.versions --env-file .env build
+cd /opt/moodle-stack
 docker compose --env-file .env.versions --env-file .env up -d
 ./init/scripts/moodle-init.sh      # also sets $CFG->sslproxy for the https wwwroot
 ./init/scripts/stack-init.sh
 MOODLE_HTTP_PORT=8080 ./init/scripts/smoke-tests.sh
 ```
 
-Note: `admin` is in the `docker` group (no sudo needed for docker), but the
-group membership takes effect only on a fresh login after cloud-init.
+Notes:
+- `admin` is in the `docker` group (no sudo needed for docker), but the group
+  membership takes effect only on a fresh login after cloud-init.
+- When recreating the server on the existing volume (data present), do NOT
+  rerun `moodle-init.sh`; just `up -d`.
 
 ## 7. Site posture checks (go-live policy)
 

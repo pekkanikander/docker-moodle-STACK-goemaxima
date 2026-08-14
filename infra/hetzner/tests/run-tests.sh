@@ -102,6 +102,19 @@ yq eval -r '.packages[]' "$rendered" | grep -qx 'docker-compose-v2' \
 yq eval -r '.packages[]' "$rendered" | grep -qx 'docker-compose-plugin' \
   && fail "docker-compose-plugin is not an Ubuntu package"
 
+# Console autologin drop-in: present, and envsubst must not have eaten $TERM.
+yq eval -r '.write_files[].path' "$rendered" \
+  | grep -qx '/etc/systemd/system/getty@tty1.service.d/autologin.conf' \
+  || fail "getty autologin drop-in missing"
+grep -q -- '--autologin admin --noclear %I $TERM' "$rendered" \
+  || fail "autologin ExecStart wrong or \$TERM substituted away"
+
+# App bootstrap: repo clone and server-bootstrap.sh run at the end of runcmd.
+grep -q 'git clone https://github.com/pekkanikander/docker-moodle-STACK-goemaxima.git /opt/moodle-stack' "$rendered" \
+  || fail "repo clone missing from runcmd"
+grep -q '/opt/moodle-stack/infra/hetzner/scripts/server-bootstrap.sh' "$rendered" \
+  || fail "server-bootstrap.sh missing from runcmd"
+
 # Stale known_hosts entries for the server are dropped; other lines survive.
 kh="$tmp/s1/home/.ssh/known_hosts"
 grep -q 'STALEKEY' "$kh" && fail "stale known_hosts entry survived: $(grep STALEKEY "$kh")"

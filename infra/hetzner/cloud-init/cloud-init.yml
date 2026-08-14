@@ -157,6 +157,16 @@ write_files:
       # Backup directory: root-owned by default.
       mkdir -p /srv/moodle-persistent/backups/db
 
+  # Auto-login admin on the local console (which on this VM is only the
+  # Hetzner web console, itself behind Hetzner account authentication).
+  - path: /etc/systemd/system/getty@tty1.service.d/autologin.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-/sbin/agetty --autologin admin --noclear %I $TERM
+
   # Minimal unattended-upgrades configuration.
   - path: /etc/apt/apt.conf.d/20auto-upgrades
     owner: root:root
@@ -207,10 +217,20 @@ runcmd:
   # Bind-mount Hetzner Volume (if attached) to /srv/moodle-persistent.
   - [ bash, -lc, "/usr/local/sbin/bind-hetzner-volume" ]
 
+  # Apply the getty autologin override written above.
+  - [ bash, -lc, "systemctl daemon-reload" ]
+  - [ bash, -lc, "systemctl restart getty@tty1" ]
+
+  # Clone the app repo and bootstrap it (Caddy vhost, .env.versions, images).
+  # Last: a failure here must not block the volume mount or console access.
+  - [ bash, -lc, "[ -d /opt/moodle-stack/.git ] || git clone https://github.com/pekkanikander/docker-moodle-STACK-goemaxima.git /opt/moodle-stack" ]
+  - [ bash, -lc, "/opt/moodle-stack/infra/hetzner/scripts/server-bootstrap.sh" ]
+
 final_message: |
   cloud-init complete.
   Admin user: admin (SSH key only; password auth disabled)
   SSH ports (socket activation): 22 and 33101 (firewall should expose only 33101)
   Persistent root: /srv/moodle-persistent (bind-mounted from /mnt/HC_Volume_*)
   Docker enabled.
-  Caddy installed (configure separately).
+  Caddy installed and configured; repo at /opt/moodle-stack, images built.
+  Remaining manual steps: set /opt/moodle-stack/.env values, run init scripts.
