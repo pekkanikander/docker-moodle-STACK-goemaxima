@@ -1,0 +1,8 @@
+ARG QBANK_TOOLS_BASE_IMAGE
+FROM ${QBANK_TOOLS_BASE_IMAGE}
+
+ARG QBANK_TOOLS_PYYAML_VERSION
+RUN pip install --no-cache-dir "PyYAML==${QBANK_TOOLS_PYYAML_VERSION}"
+
+WORKDIR /opt/qbank
+ENTRYPOINT ["python3", "/opt/qbank/compiler/compile.py"]

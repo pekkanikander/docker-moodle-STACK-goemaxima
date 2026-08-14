@@ -1,0 +1,20 @@
+id: fixture-testikoe
+name: "Fixture: koejärjestelmän testi"
+intro: |
+  Tämä koe on testiaineistoa, ei oikeaa harjoitusmateriaalia. Se käy läpi
+  kaikki tuetut tehtävätyypit: satunnaistetut muuttujat, numeerinen,
+  algebrallinen ja yksiköllinen vastaus sekä tulkintatuen kolme tasoa.
+
+behaviour: adaptive
+questionsperpage: 1
+attempts: 0
+grademethod: highest
+
+questions:
+  - id: fixture-summa
+  - id: fixture-liike-energia
+  - id: fixture-tiheys
+  - id: fixture-matka-stated
+  - id: fixture-matka-choice
+    maxmark: 2
+  - id: fixture-matka-none

@@ -85,6 +85,8 @@ services:
     volumes:
       - ${MOODLE_PERSISTENT_ROOT:-/srv/moodle-persistent}/moodledata:/var/www/moodledata
       - secrets:/run/secrets:ro
+      - ./qbank:/opt/qbank:ro
+      - ${QBANK_BUILD_DIR:-./.generated/qbank}:/opt/qbank-build:ro
     ports:
       - "127.0.0.1:${MOODLE_HTTP_PORT:-8080}:80"
     depends_on:
@@ -99,6 +101,21 @@ services:
     networks:
       - backend
       - frontend
+
+  qbank-tools:
+    image: docker-moodle-stack-goemaxima-qbank-tools
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: docker/qbank-tools/Dockerfile
+      args:
+        QBANK_TOOLS_BASE_IMAGE: ${QBANK_TOOLS_BASE_IMAGE?Set QBANK_TOOLS_BASE_IMAGE}
+        QBANK_TOOLS_PYYAML_VERSION: ${QBANK_TOOLS_PYYAML_VERSION?Set QBANK_TOOLS_PYYAML_VERSION}
+    volumes:
+      - ./qbank:/opt/qbank:ro
+      - ${QBANK_CONTENT_DIR:-./qbank/fixtures}:/opt/qbank-content:ro
+      - ${QBANK_BUILD_DIR:-./.generated/qbank}:/opt/qbank-build
+    network_mode: none
 
   moodle-cron:
     image: docker-moodle-stack-goemaxima-moodle

@@ -1,0 +1,16 @@
+id: fixture-liike-energia
+name: "Fixture: liike-energian lauseke"
+category: [Testi, Perusteet]
+tags: [fixture, algebrallinen]
+
+stem: |
+  Kappaleen massa on \(m\) ja nopeus \(v\).
+
+answer:
+  type: algebraic
+  prompt: "Kirjoita lauseke kappaleen liike-energialle."
+  formula: m*v^2/2
+  syntaxhint: "m*v^2/2"
+
+feedback: |
+  Liike-energia on \(E_k = \tfrac{1}{2} m v^2\).

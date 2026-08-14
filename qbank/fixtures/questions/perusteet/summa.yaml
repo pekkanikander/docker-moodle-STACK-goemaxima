@@ -1,0 +1,22 @@
+id: fixture-summa
+name: "Fixture: satunnaistettu summa"
+category: [Testi, Perusteet]
+tags: [fixture, numeerinen]
+
+seeds: [101, 102, 103]
+
+variables: |
+  a : rand(9) + 2;
+  b : rand(9) + 2;
+
+stem: |
+  Laske {@a@} + {@b@}.
+
+answer:
+  type: numerical
+  prompt: "Summa:"
+  formula: a + b
+  boxsize: 6
+
+feedback: |
+  Yhteenlasku: {@a@} + {@b@} = {@a + b@}.

@@ -1,0 +1,23 @@
+id: fixture-tiheys
+name: "Fixture: tiheys yksiköineen"
+category: [Testi, Perusteet]
+tags: [fixture, yksikot]
+
+seeds: [201, 202, 203]
+
+variables: |
+  massa    : rand([200, 250, 400]);
+  tilavuus : 100;
+
+stem: |
+  Kappaleen massa on {@massa@} g ja tilavuus {@tilavuus@} cm\(^3\).
+
+answer:
+  type: units
+  prompt: "Laske kappaleen tiheys. Anna vastaus yksikköineen."
+  formula: massa/tilavuus * g/cm^3
+  syntaxhint: "?*g/cm^3"
+
+feedback: |
+  Tiheys on massa jaettuna tilavuudella:
+  \({@massa@}\,\mathrm{g} / {@tilavuus@}\,\mathrm{cm^3} = {@massa/tilavuus@}\,\mathrm{g/cm^3}\).

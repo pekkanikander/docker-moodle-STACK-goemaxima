@@ -41,5 +41,12 @@ stack_qbank_plugin_urls:
 stack_qbank_plugin_sha256:
   qbank_importasversion: "1f82e71a0693ead74857b562e1688926b323b3a2059b005e34739dec1801c3fd"
 stack_deps_versions: {}
+# The stackmaxima library version the goemaxima image provides and the STACK
+# plugin expects. Authored questions record it in their <stackversion>.
+stack_maxima_version: "2026062900"
+
+# Image used to compile question sources into Moodle XML; see qbank/.
+qbank_tools_base_image: "python:3.13-slim"
+qbank_tools_pyyaml_version: "6.0.2"
 
 compose_stack_id: "moodle51-stack4130-maxima2026062900-1.2.0"

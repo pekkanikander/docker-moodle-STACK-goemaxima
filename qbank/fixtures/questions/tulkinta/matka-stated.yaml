@@ -1,0 +1,42 @@
+id: fixture-matka-stated
+name: "Fixture: matka vai siirtymä (tulkinta annettu)"
+category: [Testi, Tulkinta]
+tags: [fixture, tulkinta, scaffold-stated]
+scaffold: stated
+
+seeds: [301, 302, 303]
+
+variables: |
+  k  : rand([1, 2, 3]);
+  sx : 300 * k;
+  sy : 400 * k;
+
+stem: |
+  Oppilas kävelee ensin {@sx@} metriä itään ja kääntyy sitten pohjoiseen,
+  jonne hän kävelee {@sy@} metriä.
+
+interpretation:
+  readings:
+    - key: reitti
+      label: "matka on kuljetun reitin pituus"
+      value: sx + sy
+      intended: true
+      why: "Matka mitataan kuljettua reittiä pitkin: {@sx@} m + {@sy@} m = {@sx + sy@} m."
+    - key: siirtyma
+      label: "matka on etäisyys lähtöpisteestä"
+      value: sqrt(sx^2 + sy^2)
+      why: "Tämä on siirtymän suuruus eli linnuntie-etäisyys lähtöpisteestä, {@sqrt(sx^2 + sy^2)@} m. Kysytty matka mitataan kuljettua reittiä pitkin."
+
+answer:
+  type: numerical
+  quantity: s
+  formula: s
+  prompt: "Kuinka pitkän matkan oppilas kulkee? Vastaa metreinä."
+  boxsize: 8
+
+feedback: |
+  Reitti koostuu kahdesta osasta, joten kuljettu matka on
+  {@sx@} m + {@sy@} m = {@sx + sy@} m.
+
+  Etäisyys lähtöpisteestä olisi {@sqrt(sx^2 + sy^2)@} m, mutta sitä sanotaan
+  siirtymäksi, ei matkaksi.

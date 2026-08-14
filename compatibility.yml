@@ -22,8 +22,12 @@ tuples:
     goemaxima:
       image: "mathinstitut/goemaxima:2026062900-1.2.0"
       endpoint: "http://maxima:8080/goemaxima"
+    qbank_tools:
+      base_image: "python:3.13-slim"
+      pyyaml: "6.0.2"
 
 notes:
   - "Moodle code tree read-only is a goal; validate before enforcing."
   - "MariaDB and goemaxima are internal-only (no host ports)."
   - "STACK source is pinned to a GitHub tag archive; behaviour plugin checksums are recorded in versions.yml."
+  - "Compiled questions record stack_maxima_version in <stackversion>; it must match the STACK plugin version above."
