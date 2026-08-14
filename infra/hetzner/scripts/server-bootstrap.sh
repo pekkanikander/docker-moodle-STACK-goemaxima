@@ -25,7 +25,9 @@ if [ ! -f .env ]; then
 fi
 
 docker compose --env-file .env.versions --env-file .env build
-# moodle and mariadb are built locally, not pullable.
-docker compose --env-file .env.versions --env-file .env pull --ignore-buildable
+# Only these two services use registry images; the rest are built locally
+# (--ignore-buildable does not help: moodle-cron reuses a built image
+# without a build stanza and compose would still try to pull it).
+docker compose --env-file .env.versions --env-file .env pull secrets-init maxima
 
 chown -R admin:admin "$REPO_DIR"
