@@ -4,21 +4,16 @@
 #
 # Behavior:
 # - Creates an ed25519 key at $KEY_PATH if it does not already exist.
-# - If a "Host $HOST_ALIAS" entry exists (matched via grep -E), rewrites only
-#   HostName/User/Port/IdentityFile lines inside that block; other lines are left
-#   untouched.
-# - If no matching Host block exists, creates a new Host block.
-#
-# Caveats:
-# - The update only replaces keys that are already present in the block; it does
-#   not add missing HostName/User/Port/IdentityFile lines.
-# - The Host match is conservative but not perfect: a Host line with extra
-#   patterns or inline comments may still match or be missed.
+# - Replaces any existing "Host $HOST_ALIAS" block in ~/.ssh/config with a
+#   canonical block (HostName/User/Port/IdentityFile etc.); keys are matched
+#   case-insensitively, so e.g. an old "Hostname" line is replaced too.
+#   A backup is kept at ~/.ssh/config.bak.
+# - If no matching Host block exists, appends a new one.
 
 set -eu
 
 HOST_ALIAS=${HOST_ALIAS:-moodle-hetzner}
-HOSTNAME=${HOSTNAME:-moodle.example.com}
+HOSTNAME=${HOSTNAME:-oivus.pnr.iki.fi}
 SSH_USER=${SSH_USER:-admin}
 SSH_PORT=${SSH_PORT:-33101}
 KEY_PATH=${KEY_PATH:-"$HOME/.ssh/to_moodle_hetzner_admin_ed25519"}
@@ -35,30 +30,22 @@ else
   ssh-keygen -t ed25519 -a 64 -f "$KEY_PATH" -C "$KEY_COMMENT" -N ""
 fi
 
-  if [ ! -e "$CONFIG" ]; then
+if [ ! -e "$CONFIG" ]; then
   touch "$CONFIG"
   chmod 600 "$CONFIG"
 fi
 
 tmp=$(mktemp)
 
-if grep -qE "^Host[[:space:]]+$HOST_ALIAS[[:space:]]*$" "$CONFIG"; then
-  awk -v host="$HOST_ALIAS" -v hostname="$HOSTNAME" -v user="$SSH_USER" \
-  -v port="$SSH_PORT" -v key="$KEY_PATH" '
-  BEGIN { inblock=0; found=0 }
-  $1=="Host" && $2==host        { inblock=1; found=1; print; next }
-  $1=="Host" || $1=="Match"     { inblock=0 }
-  inblock && $1=="HostName"     { print "   HostName " hostname; next }
-  inblock && $1=="User"         { print "   User " user; next }
-  inblock && $1=="Port"         { print "   Port " port; next }
-  inblock && $1=="IdentityFile" { print "   IdentityFile " key; next }
-  { print }
-  END { if (!found) exit 1 }
-  ' "$CONFIG" > "$tmp"
-else
-  cat "$CONFIG" > "$tmp"
-  cat >> "$tmp" <<EOF
+# Drop any existing block for the alias (from its "Host" line up to, but not
+# including, the next "Host"/"Match" line), then append the canonical block.
+awk -v host="$HOST_ALIAS" '
+  tolower($1) == "host" || tolower($1) == "match" { skip = 0 }
+  tolower($1) == "host" && $2 == host && NF == 2   { skip = 1 }
+  !skip { print }
+' "$CONFIG" > "$tmp"
 
+cat >> "$tmp" <<EOF
 Host $HOST_ALIAS
    HostName $HOSTNAME
    User $SSH_USER
@@ -67,7 +54,6 @@ Host $HOST_ALIAS
    PreferredAuthentications publickey
    IdentitiesOnly yes
 EOF
-fi
 
 cp "$CONFIG" "$CONFIG.bak"
 # Preserve the original file permissions.

@@ -23,31 +23,23 @@
 # NOTE ON OUTBOUND EMAIL:
 # Not configured here; explicitly out-of-scope for now.
 
-groups:
-  - name: mariadb
-    gid: 2001
-
 hostname: moodle
 manage_etc_hosts: true
 
 # Create the primary admin user.
 # - If you prefer a different username than "admin", change it here.
+# - No supplementary "docker" group here: it exists only after package
+#   installation, a later stage; a missing group can make useradd fail and
+#   leave the system without the admin user. Added in runcmd instead.
+# - The mariadb group/user (fixed 2001:2001 for the bind-mounted DB dir) are
+#   also created in runcmd: cloud-init's schema cannot express a group gid.
 users:
   - name: admin
     shell: /bin/bash
-    groups: [sudo, docker]
+    groups: [sudo]
     sudo: ["ALL=(ALL) NOPASSWD:ALL"]
     ssh_authorized_keys:
-      # TODO: replace with your real SSH public key.
-      # Example:
-      # - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your@laptop"
       - "${ADMIN_SSH_PUBKEY}"
-
-  - name: mariadb
-    uid: 2001
-    gid: 2001
-    shell: /usr/sbin/nologin
-    system: true
 
 # Keep root account, but disable root login via SSH.
 # (This does not remove root; it prevents direct SSH login.)
@@ -174,8 +166,13 @@ write_files:
       APT::Periodic::Unattended-Upgrade "1";
 
 runcmd:
-  # Ensure docker group exists and user is in it (cloud-init user module usually handles this).
+  # Ensure docker group exists and admin is in it (docker.io normally creates the group).
   - [ bash, -lc, "getent group docker >/dev/null || groupadd docker" ]
+  - [ bash, -lc, "usermod -aG docker admin" ]
+
+  # mariadb group/user with fixed ids matching the container and bind mounts.
+  - [ bash, -lc, "getent group mariadb >/dev/null || groupadd -g 2001 mariadb" ]
+  - [ bash, -lc, "id -u mariadb >/dev/null 2>&1 || useradd -r -u 2001 -g 2001 -s /usr/sbin/nologin -M mariadb" ]
 
   # Enable Docker.
   - [ bash, -lc, "systemctl enable --now docker" ]

@@ -98,4 +98,32 @@ grep -q -- 'server create .* --firewall moodle' "$tmp/s2/hcloud.log" || fail "ex
 grep -q -- 'volume create' "$tmp/s2/hcloud.log" && fail "volume re-created although it exists"
 grep -q -- 'volume attach --automount --server 42 7' "$tmp/s2/hcloud.log" || fail "existing detached volume not attached"
 
+# --- Scenario 3: ssh-keygen.sh replaces a stale Host block --------------------
+sshtest="$tmp/ssh"
+mkdir -p "$sshtest/.ssh"
+cat > "$sshtest/.ssh/config" <<'EOF'
+Host other-box
+   HostName other.example.org
+
+Host moodle-hetzner
+   Hostname 198.51.100.99
+   Port 33101
+   PreferredAuthentications publickey
+   IdentityFile /old/key/path
+
+Host tail-box
+   HostName tail.example.org
+EOF
+HOME="$sshtest" HOSTNAME=oivus.example.test \
+  sh "$repo_root/infra/hetzner/scripts/ssh-keygen.sh" > /dev/null 2>&1 \
+  || fail "ssh-keygen.sh exited non-zero"
+cfg="$sshtest/.ssh/config"
+grep -q '198.51.100.99' "$cfg" && fail "stale Hostname survived block replacement"
+grep -q '/old/key/path' "$cfg" && fail "stale IdentityFile survived block replacement"
+[ "$(grep -c '^Host moodle-hetzner' "$cfg")" = "1" ] || fail "expected exactly one moodle-hetzner block"
+grep -q '   HostName oivus.example.test' "$cfg" || fail "new HostName missing"
+grep -q '   User admin' "$cfg" || fail "User line missing"
+grep -q 'HostName other.example.org' "$cfg" || fail "unrelated host block damaged"
+grep -q 'HostName tail.example.org' "$cfg" || fail "following host block damaged"
+
 echo "OK: infra tests passed"
