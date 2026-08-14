@@ -136,5 +136,6 @@ docker compose --env-file .env.versions --env-file .env exec -T -u www-data mood
   php /var/www/html/admin/cli/upgrade.php --non-interactive
 ```
 
-Take a backup first once M2 (backups) exists. Do NOT run `moodle-init.sh` on an
-installed site: it forces a fresh install.
+Take a backup first: `sudo systemctl start moodle-db-backup.service` (see
+`infra/BACKUP.md`). Do NOT run `moodle-init.sh` on an installed site: it
+forces a fresh install.

@@ -69,6 +69,16 @@ With questions in git, the DB stays near-disposable until attempt history matter
 - Phase 6 release-based deploy automation.
 - Moodle 5.2 line migration.
 
+## Planned: backup security session
+
+A dedicated planning session on backups after a server compromise: a
+compromised server can poison the dumps the MBP pulls, and a restored dump
+faithfully restores attacker state (admin accounts, web-service tokens,
+altered settings, uploaded files). Topics: making the MBP copies
+append-only against the server, baselining/diffing security-relevant
+tables between dumps, and a post-restore audit checklist. Interim stance
+in `infra/BACKUP.md` (prefer an older weekly, audit users and tokens).
+
 ## Related documents
 
 - `hetzner-hosting-task.md` — detailed hosting plan (Phases 0–7; Phase 6 deferred).
