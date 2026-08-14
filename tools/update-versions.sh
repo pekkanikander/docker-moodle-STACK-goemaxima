@@ -14,10 +14,13 @@ fi
 output="${1:-./.env.versions}"
 tmp="$(mktemp)"
 
+# yq reads versions.yml via stdin: the snap-packaged yq on Ubuntu is strictly
+# confined and cannot open files outside $HOME (e.g. under /opt).
+
 require_value() {
   key="$1"
   query="$2"
-  value="$(yq -r "$query" ./versions.yml)"
+  value="$(yq -r "$query" < ./versions.yml)"
   if [ "$value" = "null" ] || [ -z "$value" ]; then
     echo "ERROR: ${key} is missing or empty in versions.yml" >&2
     exit 1
@@ -28,7 +31,7 @@ require_value() {
 allow_empty() {
   key="$1"
   query="$2"
-  value="$(yq -r "$query" ./versions.yml)"
+  value="$(yq -r "$query" < ./versions.yml)"
   if [ "$value" = "null" ]; then
     echo "ERROR: ${key} is missing in versions.yml" >&2
     exit 1
