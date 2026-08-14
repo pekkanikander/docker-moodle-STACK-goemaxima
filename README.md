@@ -103,6 +103,20 @@ as are the companion behaviour plugins.
 - To automate STACK settings, run `./init/scripts/stack-init.sh`
   after filling the `MOODLE_STACK_MAXIMA*` and `MOODLE_STACK_PLATFORM` values in `.env`.
 
+## Question banks
+
+Questions are authored as YAML in a separate content repo, compiled to Moodle
+XML, and imported by CLI; the git tree is the source of truth and no question is
+authored in the web UI. See `qbank/README.md` for the source format and the
+update workflow.
+
+```sh
+QBANK_CONTENT_DIR=~/src/oivus-questions ./tools/qbank.sh all
+```
+
+With `QBANK_CONTENT_DIR` unset, the fixtures in `qbank/fixtures/` are used;
+those are what CI runs.
+
 ## Local CI with `act`
 
 Use `tools/act-ci.sh` to run the GitHub Actions workflow locally; tested only with macOS 15.7.

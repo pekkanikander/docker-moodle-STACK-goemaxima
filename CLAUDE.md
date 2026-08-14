@@ -23,10 +23,16 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - `compatibility.yml` for supported tuples and notes.
 - `init/scripts/*.sh` for bootstrap, install, config, and smoke tests.
 - `docker/moodle/Dockerfile` for the custom Moodle build (Moodle + STACK).
+- `qbank/` for the question-bank machinery: `compiler/` (YAML → Moodle XML),
+  `cli/` (import and quiz build, run inside the `moodle` container),
+  `fixtures/` (test content), and `README.md` for the source format.
+- `tools/qbank.sh` as the entry point; `docker/qbank-tools/` builds the compiler
+  image. Question content lives in a separate repo, found via `QBANK_CONTENT_DIR`.
 - `.github/workflows/ci.yml` for end-to-end CI.
 - `README.md` for quickstart and update policy.
 - `ROADMAP.md` for milestones and current priorities.
 - `tools/act-ci.sh` for local CI via `act`.
+- `notes/` for research notes behind version and design decisions.
 - `infra/hetzner/` for VM provisioning (cloud-init, hcloud helper); plan in `hetzner-hosting-task.md`.
 - `infra/BACKUP.md` for the backup/restore architecture; `infra/mbp/` holds the
   master copies deployed to `~/Sites/oivus.pnr.iki.fi` by `infra/mbp/deploy.sh`.

@@ -51,9 +51,15 @@ Before real attempt history accumulates:
 
 ## M3 — Question banks as code
 
-- [ ] Keep question banks as STACK/Moodle XML in git; import via Moodle CLI.
-- [ ] LLM-assisted authoring reviewed as diffs.
-- [ ] Interpretation-scaffolded question templates (see purpose above).
+- [x] Keep question banks in git and import them via Moodle CLI. Questions are
+      authored as YAML and compiled to Moodle XML rather than hand-written as
+      XML; see `qbank/README.md`.
+- [x] LLM-assisted authoring reviewed as diffs: the content lives in a separate
+      repo, located by `QBANK_CONTENT_DIR`, never by an assumed path.
+- [x] Interpretation-scaffolded question templates (see purpose above), as a
+      `stated` / `choice` / `none` ladder.
+- [x] A fixture exam (`qbank/fixtures/`) exercising every supported feature,
+      run end to end by CI.
 With questions in git, the DB stays near-disposable until attempt history matters.
 
 ## M4 — Content
@@ -83,4 +89,4 @@ in `infra/BACKUP.md` (prefer an older weekly, audit users and tokens).
 
 - `hetzner-hosting-task.md` — detailed hosting plan (Phases 0–7; Phase 6 deferred).
 - `moodle-stack-compose-task.md` — original project brief.
-- `questions/` — research notes behind version and design decisions.
+- `notes/` — research notes behind version and design decisions.

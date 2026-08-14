@@ -64,6 +64,9 @@ jobs:
       - name: Smoke tests
         run: ./init/scripts/smoke-tests.sh
 
+      - name: Question bank fixtures
+        run: ./tools/qbank.sh all
+
       - name: Logs on failure
         if: failure()
         run: |
