@@ -10,6 +10,11 @@ cd "$REPO_DIR"
 install -o root -g root -m 0644 infra/hetzner/caddy/Caddyfile /etc/caddy/Caddyfile
 systemctl reload caddy
 
+install -o root -g root -m 0644 infra/hetzner/systemd/moodle-db-backup.service \
+  infra/hetzner/systemd/moodle-db-backup.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now moodle-db-backup.timer
+
 ./tools/update-versions.sh
 
 if [ ! -f .env ]; then

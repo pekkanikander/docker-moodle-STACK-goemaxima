@@ -160,4 +160,10 @@ grep -q '   User admin' "$cfg" || fail "User line missing"
 grep -q 'HostName other.example.org' "$cfg" || fail "unrelated host block damaged"
 grep -q 'HostName tail.example.org' "$cfg" || fail "following host block damaged"
 
+# --- Syntax checks for scripts not exercised by the scenarios above ----------
+for s in infra/hetzner/scripts/server-bootstrap.sh init/scripts/backup-db.sh \
+         init/scripts/restore-db.sh tools/mbp-sync.sh; do
+  sh -n "$repo_root/$s" || fail "syntax error in $s"
+done
+
 echo "OK: infra tests passed"

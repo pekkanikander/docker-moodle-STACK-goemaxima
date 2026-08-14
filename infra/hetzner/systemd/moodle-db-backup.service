@@ -1,0 +1,9 @@
+[Unit]
+Description=Dump the Moodle database to the persistent volume
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/moodle-stack
+ExecStart=/opt/moodle-stack/init/scripts/backup-db.sh

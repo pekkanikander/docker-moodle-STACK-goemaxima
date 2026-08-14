@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>fi.iki.pnr.oivus.backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/pnr/Development/Moodle/docker-moodle-STACK-goemaxima/tools/mbp-sync.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>3600</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/pnr/Sites/oivus.pnr.iki.fi/.launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/pnr/Sites/oivus.pnr.iki.fi/.launchd.log</string>
+</dict>
+</plist>
