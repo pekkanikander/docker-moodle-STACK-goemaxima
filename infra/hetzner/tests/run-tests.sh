@@ -71,9 +71,12 @@ for port in 80 443 33101; do
 done
 grep -q -- 'server create .* --firewall moodle' "$log" || fail "firewall not attached"
 
-# Volume is created and attached with automount.
-grep -q -- 'volume create --name moodle' "$log" || fail "volume not created"
-grep -q -- 'volume attach 7 42 --automount' "$log" || fail "volume not attached"
+# Volume is created attached to the server, formatted, with automount.
+# (A bare "volume create" without --server/--location is an hcloud error, and
+# automount of an unformatted volume cannot work.)
+grep -q -- 'volume create --name moodle --size 10 --server 42 --automount --format ext4' "$log" \
+  || fail "volume create lacks --server/--automount/--format: $(grep 'volume create' "$log")"
+grep -q -- 'volume attach' "$log" && fail "volume attach called although create attached it"
 
 # Rendered user-data: valid YAML, key substituted, correct docker packages.
 rendered="$tmp/s1/.generated/cloud-init.rendered.yml"
@@ -85,11 +88,14 @@ yq eval -r '.packages[]' "$rendered" | grep -qx 'docker-compose-v2' \
 yq eval -r '.packages[]' "$rendered" | grep -qx 'docker-compose-plugin' \
   && fail "docker-compose-plugin is not an Ubuntu package"
 
-# --- Scenario 2: firewall already exists -------------------------------------
-rm -f "$STATE_DIR/fw_created" "$STATE_DIR/volume_created"
+# --- Scenario 2: firewall and a detached volume already exist ----------------
+rm -f "$STATE_DIR/fw_created"
 export FW_EXISTS=1
+: > "$STATE_DIR/volume_created"
 run_script "$tmp/s2"
 grep -q -- 'firewall create' "$tmp/s2/hcloud.log" && fail "firewall re-created although it exists"
 grep -q -- 'server create .* --firewall moodle' "$tmp/s2/hcloud.log" || fail "existing firewall not attached"
+grep -q -- 'volume create' "$tmp/s2/hcloud.log" && fail "volume re-created although it exists"
+grep -q -- 'volume attach 7 42 --automount' "$tmp/s2/hcloud.log" || fail "existing detached volume not attached"
 
 echo "OK: infra tests passed"

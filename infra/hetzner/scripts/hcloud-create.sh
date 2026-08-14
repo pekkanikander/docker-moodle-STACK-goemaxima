@@ -20,7 +20,7 @@ set -eu
 #   FIREWALL            Hetzner firewall name to attach; created with rules for
 #                       TCP 80/443/33101 if it does not exist (default: moodle)
 #   VOLUME_NAME         Volume name to create/attach (optional)
-#   VOLUME_SIZE_GB      Volume size if created (default: 50)
+#   VOLUME_SIZE_GB      Volume size if created (default: 10)
 #   RECREATE            If set to 1, delete existing server with same name (default: 0)
 #
 # Notes:
@@ -102,13 +102,15 @@ ipv6=$(echo "$server_json" | jq -r '.public_net.ipv6.ip')
 
 vol_id=$(hcloud volume list -o json | jq -r --arg n "$VOLUME_NAME" '.[] | select(.name==$n) | .id' | head -n 1)
 if [ -z "$vol_id" ] || [ "$vol_id" = "null" ]; then
-  hcloud volume create --name "$VOLUME_NAME" --size "$VOLUME_SIZE_GB"
-  vol_id=$(hcloud volume list -o json | jq -r --arg n "$VOLUME_NAME" '.[] | select(.name==$n) | .id' | head -n 1)
-fi
-
-attached_to=$(hcloud volume describe "$vol_id" -o json | jq -r '.server // empty')
-if [ -z "$attached_to" ] || [ "$attached_to" = "null" ]; then
-  hcloud volume attach "$vol_id" "$server_id" --automount
+  # --server both places the volume and attaches it; automount needs a
+  # filesystem, hence --format.
+  hcloud volume create --name "$VOLUME_NAME" --size "$VOLUME_SIZE_GB" \
+    --server "$server_id" --automount --format ext4
+else
+  attached_to=$(hcloud volume describe "$vol_id" -o json | jq -r '.server // empty')
+  if [ -z "$attached_to" ] || [ "$attached_to" = "null" ]; then
+    hcloud volume attach "$vol_id" "$server_id" --automount
+  fi
 fi
 
 cat <<EOF
