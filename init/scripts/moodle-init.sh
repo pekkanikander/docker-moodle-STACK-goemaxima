@@ -66,6 +66,9 @@ log "Setting Moodle noreply address."
 dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --name=noreplyaddress \
   --set="${MOODLE_NOREPLY_EMAIL}"
+log "Hiding the guest login button."
+dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
+  --name=guestloginbutton --set=0
 log "Purging Moodle caches."
 dc exec -T moodle php /var/www/html/admin/cli/purge_caches.php
 log "Syncing config.php into moodledata."

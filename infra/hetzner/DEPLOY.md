@@ -106,7 +106,7 @@ Notes:
 
 ## 7. Site posture checks (go-live policy)
 
-Fresh Moodle defaults already match the policy; verify rather than trust:
+`moodle-init.sh` sets these; verify rather than trust:
 
 ```sh
 docker compose --env-file .env.versions --env-file .env exec -T moodle \

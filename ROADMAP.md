@@ -28,14 +28,17 @@ interpretation choice, with the scaffolding faded over time.
       firewall never created, `docker-compose-plugin` not in Ubuntu repos.
 - [x] Caddyfile and on-VM runtime layout (`/opt/moodle-stack`), documented
       (`infra/hetzner/caddy/Caddyfile`, `infra/hetzner/DEPLOY.md`).
-- [ ] Provision VM (Console/hcloud + cloud-init), DNS A+AAAA for
-      `oivus.pnr.iki.fi` (zone `pnr.iki.fi` at easyDNS), TLS via Caddy.
-- [ ] Manual, documented deploy (`ssh; git fetch; checkout tag; compose up -d`).
+- [x] Provision VM (hcloud + cloud-init, repeatable via `RECREATE=1`), DNS
+      A+AAAA for `oivus.pnr.iki.fi` (zone `pnr.iki.fi` at easyDNS), TLS via
+      Caddy. (done 2026-08-14)
+- [x] Documented deploy: cloud-init bootstraps repo clone, Caddy vhost and
+      image build; manual steps are `.env` secrets + init scripts (DEPLOY.md).
       Phase 6 (release-artefact automation, deploy user, forced-command key) is
       **deferred** until an update cadence justifies it.
-- Site posture at go-live: self-registration off, guest access off, accounts
-  created manually, minimal plugin surface. Outbound email remains out of scope
-  while there is a single learner (admin resets passwords by hand).
+- [x] Site posture at go-live: self-registration off, guest login hidden
+      (set by `moodle-init.sh`), accounts created manually, minimal plugin
+      surface. Outbound email remains out of scope while there is a single
+      learner (admin resets passwords by hand).
 
 ## M2 — Backups and restore drill (Phase 5)
 
