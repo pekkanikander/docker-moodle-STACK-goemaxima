@@ -43,9 +43,11 @@ interpretation choice, with the scaffolding faded over time.
 ## M2 — Backups and restore drill (Phase 5)
 
 Before real attempt history accumulates:
-- [ ] Server-side daily DB dumps with rotation.
-- [ ] macOS rsync pull of moodledata + dumps.
-- [ ] One successful, documented restore drill.
+- [x] Server-side daily DB dumps with rotation. (2026-08-14)
+- [x] macOS rsync pull of moodledata + dumps. (2026-08-14)
+- [x] One successful, documented restore drill. (2026-08-14: server-side
+      `restore-db.sh` + smoke tests green; full from-MBP disaster drill
+      deferred until worth destroying the server for.)
 
 ## M3 — Question banks as code
 

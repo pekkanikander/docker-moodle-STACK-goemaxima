@@ -138,6 +138,7 @@ so CI and local runs don't reuse stale DB data with new secrets. For absolute pa
 ## Hosting
 Production hosting (Hetzner VM, Caddy TLS, `oivus.pnr.iki.fi`) is documented in
 `infra/hetzner/DEPLOY.md`; the underlying plan is `hetzner-hosting-task.md`.
+Backups and restore procedures are documented in `infra/BACKUP.md`.
 
 ## Updates
 - Versions are pinned in `versions.yml`.
