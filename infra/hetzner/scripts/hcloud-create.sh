@@ -109,7 +109,7 @@ if [ -z "$vol_id" ] || [ "$vol_id" = "null" ]; then
 else
   attached_to=$(hcloud volume describe "$vol_id" -o json | jq -r '.server // empty')
   if [ -z "$attached_to" ] || [ "$attached_to" = "null" ]; then
-    hcloud volume attach "$vol_id" "$server_id" --automount
+    hcloud volume attach --automount --server "$server_id" "$vol_id"
   fi
 fi
 

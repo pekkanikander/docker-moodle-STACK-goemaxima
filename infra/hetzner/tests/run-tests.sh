@@ -96,6 +96,6 @@ run_script "$tmp/s2"
 grep -q -- 'firewall create' "$tmp/s2/hcloud.log" && fail "firewall re-created although it exists"
 grep -q -- 'server create .* --firewall moodle' "$tmp/s2/hcloud.log" || fail "existing firewall not attached"
 grep -q -- 'volume create' "$tmp/s2/hcloud.log" && fail "volume re-created although it exists"
-grep -q -- 'volume attach 7 42 --automount' "$tmp/s2/hcloud.log" || fail "existing detached volume not attached"
+grep -q -- 'volume attach --automount --server 42 7' "$tmp/s2/hcloud.log" || fail "existing detached volume not attached"
 
 echo "OK: infra tests passed"
