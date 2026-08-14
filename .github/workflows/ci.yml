@@ -48,11 +48,15 @@ jobs:
         run: |
           set -eu
           ./tools/update-versions.sh ./.env.versions
-          if [ -f .env.ci ]; then
-            cat .env.versions .env.example .env.ci > .env
-          else
-            cat .env.versions .env.example > .env
+          if [ ! -f .env.ci ]; then
+            # The absolute default persistent root would be created root-owned by
+            # Docker; clean-rebuild.sh only wipes and opens up relative roots.
+            printf '%s\n' \
+              'MOODLE_PERSISTENT_ROOT=.ci-persistent' \
+              'MOODLE_ADMIN_PASSWORD=testing-only-no-production' \
+              > .env.ci
           fi
+          cat .env.versions .env.example .env.ci > .env
 
       - name: Clean rebuild
         run: ./tools/clean-rebuild.sh

@@ -110,9 +110,10 @@ This repo assumes `ghcr.io/catthehacker/ubuntu:act-latest` is available on your 
 CI runs on PRs, tags, releases, and manual dispatch; `act-ci.sh` uses amd64 emulation.
 `act-ci.sh` uses `--bind` so bind-mounted persistent paths work.
 
-The CI run creates `.env` by concatenating `.env.versions`, `.env.example` and `.env.ci`,
-if there is one.  That `.env` is used only by the CI run; it doesn't change your local
-`.env` if you have one.  For a local build, you don't need `.env.ci`.
+The CI run creates `.env` by concatenating `.env.versions`, `.env.example` and `.env.ci`.
+If there is no `.env.ci`, CI generates a minimal one (relative `MOODLE_PERSISTENT_ROOT`,
+throwaway admin password).  That `.env` is used only by the CI run; it doesn't change your
+local `.env` if you have one.  For a local build, you don't need `.env.ci`.
 
 If you want to mimic the CI behaviour exactly, you can create a `.env.ci` and do
 ```

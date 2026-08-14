@@ -14,9 +14,9 @@ neurotypical reading (e.g. "distance" = straight line or along a route?). Questi
 banks should train this explicitly, e.g. multipart questions whose first step is an
 interpretation choice, with the scaffolding faded over time.
 
-## M0 — Versions and repo hygiene (in progress)
+## M0 — Versions and repo hygiene (done 2026-08)
 
-- [ ] Bump to Moodle 5.1.6 (Aug 2026 security release), STACK 4.13.1,
+- [x] Bump to Moodle 5.1.6 (Aug 2026 security release), STACK 4.13.1,
       goemaxima 2026062900-1.2.0; refresh behaviour-plugin tags and fill the
       missing checksums in `versions.yml`.
 - Policy: stay on the Moodle 5.1 line for now; evaluate 5.2 later as a separate
@@ -24,10 +24,11 @@ interpretation choice, with the scaffolding faded over time.
 
 ## M1 — Hosted go-live (hetzner-hosting-task.md Phases 1–4, re-scoped)
 
-- [ ] Fix provisioning defects: `hcloud-create.sh` missing `--image`/`--type`,
+- [x] Fix provisioning defects: `hcloud-create.sh` missing `--image`/`--type`,
       firewall never created, `docker-compose-plugin` not in Ubuntu repos.
 - [ ] Caddyfile and on-VM runtime layout (`/opt/moodle-stack`), documented.
-- [ ] Provision VM (Console/hcloud + cloud-init), DNS A+AAAA at Gandi, TLS via Caddy.
+- [ ] Provision VM (Console/hcloud + cloud-init), DNS A+AAAA for
+      `oivus.pnr.iki.fi` (zone `pnr.iki.fi` at easyDNS), TLS via Caddy.
 - [ ] Manual, documented deploy (`ssh; git fetch; checkout tag; compose up -d`).
       Phase 6 (release-artefact automation, deploy user, forced-command key) is
       **deferred** until an update cadence justifies it.

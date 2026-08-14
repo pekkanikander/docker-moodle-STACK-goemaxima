@@ -25,7 +25,9 @@ but when this task starts, there is no such need.
 - Hosting: Hetzner Cloud VM, CX23 (smallest ~4 GB tier suffices; resizing is trivial)
 - Phase 6 (release-based deploy automation) is deferred; go-live is Phases 1–4
   plus minimal backups, with a documented manual deploy (see `ROADMAP.md`)
-- DNS: domain hosted at Gandi, add subdomain; use both IPv4 and IPv6
+- DNS: hostname `oivus.pnr.iki.fi` in the `pnr.iki.fi` zone hosted at easyDNS;
+  use both IPv4 and IPv6. A separate domain at Gandi (for semi-open access)
+  is a possible late-stage step, not part of go-live.
 - SSH: hardened internet SSH on **port 33101** (non-standard port reduces scanner noise)
 - TLS: Caddy automatic HTTPS; keep port **80 open** for ACME HTTP-01 issuance/renewal; redirect HTTP→HTTPS
 - Storage: Hetzner Volume automatic attach + bind mount to stable path;
@@ -37,7 +39,7 @@ but when this task starts, there is no such need.
 ## Deliverables
 1. A Hetzner VM provisioned via Console + cloud-init.
 2. Hetzner Cloud Firewall rules created and attached.
-3. DNS records in Gandi created (A + AAAA) for the chosen hostname.
+3. DNS records at easyDNS created (A + AAAA) for `oivus.pnr.iki.fi`.
 4. Caddy installed on host, configured for reverse proxy to Moodle.
 5. Docker/Compose installed; repo deployed; persistent directories wired to Hetzner Volume.
 6. Hardened SSH configuration (keys-only, no root, port 33101) and deploy key with forced command.
@@ -143,19 +145,20 @@ Acceptance:
 
 ---
 
-## Phase 2 — DNS at Gandi (A + AAAA)
+## Phase 2 — DNS at easyDNS (A + AAAA)
 
-### 2.1 Choose hostname
-Example: `moodle.<domain>`
+### 2.1 Hostname
+`oivus.pnr.iki.fi` (host `oivus` in the `pnr.iki.fi` zone at easyDNS).
 
-### 2.2 Create DNS records in Gandi
-- A record → VM IPv4
-- AAAA record → VM IPv6
+### 2.2 Create DNS records at easyDNS
+- A record `oivus` → VM IPv4
+- AAAA record `oivus` → VM IPv6
+- TTL: something short (e.g. 300 s) until go-live is stable
 
 ### 2.3 Verify
 From macOS:
-- `dig A moodle.<domain> +short`
-- `dig AAAA moodle.<domain> +short`
+- `dig A oivus.pnr.iki.fi +short`
+- `dig AAAA oivus.pnr.iki.fi +short`
 
 Acceptance:
 - Both resolve to the VM.
