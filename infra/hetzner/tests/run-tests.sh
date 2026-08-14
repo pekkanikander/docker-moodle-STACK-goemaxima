@@ -42,12 +42,26 @@ export STATE_DIR="$tmp/state"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+# HOME is isolated per scenario: the script rewrites $HOME/.ssh/known_hosts,
+# which must never touch the real one. Seed it with stale entries for the
+# stub server (192.0.2.10 / 2001:db8::1) plus lines that must survive.
 run_script() {
   workdir="$1"
-  mkdir -p "$workdir"
+  mkdir -p "$workdir/home/.ssh"
+  cat > "$workdir/home/.ssh/known_hosts" <<'EOF'
+this line is invalid and must survive untouched
+github.com ssh-ed25519 KEEPKEY
+[oivus.example.test]:33101 ssh-ed25519 STALEKEY1
+[192.0.2.10]:33101 ssh-ed25519 STALEKEY2
+192.0.2.10 ssh-rsa STALEKEY3
+oivus.example.test,192.0.2.10 ecdsa-sha2-nistp256 STALEKEY4
+[2001:db8::1]:33101 ssh-ed25519 STALEKEY5
+EOF
   ( cd "$workdir" && \
+    HOME="$workdir/home" \
     ADMIN_SSH_PUBKEY="ssh-ed25519 TESTKEY test@example" \
     CLOUD_INIT_TEMPLATE="$template" \
+    HOST_DNS_NAME=oivus.example.test \
     HCLOUD_LOG="$workdir/hcloud.log" \
     sh "$script" > "$workdir/stdout" 2>&1 ) || {
       cat "$workdir/stdout" >&2
@@ -87,6 +101,13 @@ yq eval -r '.packages[]' "$rendered" | grep -qx 'docker-compose-v2' \
   || fail "docker-compose-v2 package missing"
 yq eval -r '.packages[]' "$rendered" | grep -qx 'docker-compose-plugin' \
   && fail "docker-compose-plugin is not an Ubuntu package"
+
+# Stale known_hosts entries for the server are dropped; other lines survive.
+kh="$tmp/s1/home/.ssh/known_hosts"
+grep -q 'STALEKEY' "$kh" && fail "stale known_hosts entry survived: $(grep STALEKEY "$kh")"
+grep -qx 'github.com ssh-ed25519 KEEPKEY' "$kh" || fail "unrelated known_hosts entry lost"
+grep -q 'this line is invalid and must survive untouched' "$kh" || fail "invalid line not preserved"
+[ -f "$kh.bak" ] || fail "known_hosts backup missing"
 
 # --- Scenario 2: firewall and a detached volume already exist ----------------
 rm -f "$STATE_DIR/fw_created"

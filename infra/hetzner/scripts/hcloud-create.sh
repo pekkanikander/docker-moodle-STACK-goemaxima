@@ -22,6 +22,9 @@ set -eu
 #   VOLUME_NAME         Volume name to create/attach (optional)
 #   VOLUME_SIZE_GB      Volume size if created (default: 10)
 #   RECREATE            If set to 1, delete existing server with same name (default: 0)
+#   HOST_DNS_NAME       DNS name of the server, for known_hosts cleanup
+#                       (default: oivus.pnr.iki.fi)
+#   SSH_PORT            SSH port used in known_hosts entries (default: 33101)
 #
 # Notes:
 # - Uses Hetzner defaults wherever reasonable.
@@ -37,6 +40,8 @@ RECREATE=${RECREATE:-0}
 VOLUME_NAME=${VOLUME_NAME:-moodle}
 VOLUME_SIZE_GB=${VOLUME_SIZE_GB:-10}
 FIREWALL=${FIREWALL:-moodle}
+HOST_DNS_NAME=${HOST_DNS_NAME:-oivus.pnr.iki.fi}
+SSH_PORT=${SSH_PORT:-33101}
 
 # Prefer explicit user-data file; otherwise render from template.
 USER_DATA_FILE=".generated/cloud-init.rendered.yml"
@@ -99,6 +104,24 @@ server_json=$(hcloud server describe "$SERVER_NAME" -o json)
 server_id=$(echo "$server_json" | jq -r '.id')
 ipv4=$(echo "$server_json" | jq -r '.public_net.ipv4.ip')
 ipv6=$(echo "$server_json" | jq -r '.public_net.ipv6.ip')
+
+# A new server has new host keys: drop stale known_hosts entries for its
+# DNS name and IPs. Not ssh-keygen -R, which refuses to rewrite a known_hosts
+# file that contains any old-format ("invalid") lines.
+known_hosts="$HOME/.ssh/known_hosts"
+if [ -f "$known_hosts" ]; then
+  cp "$known_hosts" "$known_hosts.bak"
+  awk -v h1="[$HOST_DNS_NAME]:$SSH_PORT" -v h2="[$ipv4]:$SSH_PORT" \
+      -v h3="[$ipv6]:$SSH_PORT" -v h4="$ipv4" -v h5="$ipv6" '
+    {
+      n = split($1, a, ",")
+      for (i = 1; i <= n; i++)
+        if (a[i] == h1 || a[i] == h2 || a[i] == h3 || a[i] == h4 || a[i] == h5)
+          next
+      print
+    }
+  ' "$known_hosts.bak" > "$known_hosts"
+fi
 
 vol_id=$(hcloud volume list -o json | jq -r --arg n "$VOLUME_NAME" '.[] | select(.name==$n) | .id' | head -n 1)
 if [ -z "$vol_id" ] || [ "$vol_id" = "null" ]; then
