@@ -25,6 +25,7 @@ if [ ! -f .env ]; then
 fi
 
 docker compose --env-file .env.versions --env-file .env build
-docker compose --env-file .env.versions --env-file .env pull
+# moodle and mariadb are built locally, not pullable.
+docker compose --env-file .env.versions --env-file .env pull --ignore-buildable
 
 chown -R admin:admin "$REPO_DIR"
