@@ -6,7 +6,7 @@
   <string>fi.iki.pnr.oivus.backup</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/pnr/Development/Moodle/docker-moodle-STACK-goemaxima/tools/mbp-sync.sh</string>
+    <string>/Users/pnr/Sites/oivus.pnr.iki.fi/bin/mbp-sync.sh</string>
   </array>
   <key>StartInterval</key>
   <integer>3600</integer>

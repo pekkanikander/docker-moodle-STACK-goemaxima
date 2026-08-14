@@ -13,16 +13,23 @@ Three generations protect against different failures:
    Daily dumps (kept 7), weeklies (kept 4), plus a moodledata mirror.
 3. **Time Machine** snapshots of the MBP copy — older history.
 
-## MBP sync setup (one-time)
+## MBP setup
 
 ```sh
-cp infra/mbp/fi.iki.pnr.oivus.backup.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/fi.iki.pnr.oivus.backup.plist
+infra/mbp/deploy.sh
 ```
 
-The agent fires `tools/mbp-sync.sh` hourly; the script syncs at most once
-per 20 h and exits silently when the server is unreachable, so an offline
-laptop just catches up at the next opportunity. Log: `~/Sites/oivus.pnr.iki.fi/.launchd.log`.
+(Re)populates `~/Sites/oivus.pnr.iki.fi` from the master copies in
+`infra/mbp/` — sync and restore scripts into `bin/`, the README, and the
+launchd agent — never the backup data itself. Re-run after changing
+anything under `infra/mbp/`. The agent fires `bin/mbp-sync.sh` hourly;
+the script syncs at most once per 20 h and exits silently when the server
+is unreachable, so an offline laptop just catches up at the next
+opportunity. Log: `~/Sites/oivus.pnr.iki.fi/.launchd.log`.
+
+The deployed `bin/` scripts and README are self-sufficient: sync and
+restore need only the ssh alias, not a repo clone. Only recreating the
+server itself needs the repo (from GitHub if no local clone).
 
 ## Restore: recent server-side mishap
 
@@ -39,20 +46,21 @@ after. Attempt history after the dump's date is lost.
 
 ## Restore: full disaster (server or volume gone)
 
+From `~/Sites/oivus.pnr.iki.fi` (its README carries the same runbook):
+
 1. Recreate the server: DEPLOY.md §2 (`RECREATE=1` if it still exists).
    Cloud-init rebuilds everything except data and `.env` values.
-2. Set `.env` values on the VM (DEPLOY.md §6).
-3. Push the data back from the MBP:
+2. Set `.env` values on the VM (DEPLOY.md §6), then start the stack —
+   `up -d` only; do NOT run `moodle-init.sh`, it forces a fresh install:
 
    ```sh
-   rsync -az --rsync-path="sudo rsync" ~/Sites/oivus.pnr.iki.fi/db/ moodle-hetzner:/srv/moodle-persistent/backups/db/
-   rsync -az --rsync-path="sudo rsync" ~/Sites/oivus.pnr.iki.fi/moodledata/ moodle-hetzner:/srv/moodle-persistent/moodledata/
-   ssh moodle-hetzner 'sudo chown -R 33:33 /srv/moodle-persistent/moodledata'
+   ssh moodle-hetzner 'cd /opt/moodle-stack && docker compose --env-file .env.versions --env-file .env up -d'
    ```
 
-4. On the VM: `docker compose --env-file .env.versions --env-file .env up -d`
-   then `./init/scripts/restore-db.sh`. Do NOT run `moodle-init.sh` — it
-   forces a fresh install.
+3. `bin/mbp-restore-moodledata.sh` — pushes the moodledata mirror back
+   (asks for confirmation; overwrites the server's moodledata).
+4. `bin/mbp-restore-db.sh` — uploads the newest local dump and runs the
+   server-side restore.
 5. Verify: site loads over https, admin login works, STACK health check green.
 
 ## Caveat
