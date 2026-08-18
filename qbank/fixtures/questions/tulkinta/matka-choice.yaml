@@ -13,12 +13,11 @@ variables: |
 
 stem: |
   Oppilas kävelee ensin {@sx@} metriä itään ja kääntyy sitten pohjoiseen,
-  jonne hän kävelee {@sy@} metriä. Tehtävässä kysytään kuljettua matkaa.
+  jonne hän kävelee {@sy@} metriä.
 
 interpretation:
   weight: 0.4
   prompt: |
-    Fysiikassa nopeus v määritellään kaavalla v = s / t, jossa s on matka.
     Mitä sanalla <em>matka</em> tarkoitetaan tässä tehtävässä?
   readings:
     - key: reitti

@@ -79,7 +79,7 @@ function qbank_ensure_bank(stdClass $course, string $idnumber, string $name): cm
 }
 
 /**
- * Resolve a category path (["Fysiikka", "Liike"]) inside a bank context,
+ * Resolve a category path (["Physics", "Motion"]) inside a bank context,
  * creating the categories that do not exist yet. An empty path resolves to the
  * bank's default category; questions cannot live in the "top" category.
  */

@@ -62,10 +62,10 @@ Before real attempt history accumulates:
       run end to end by CI.
 With questions in git, the DB stays near-disposable until attempt history matters.
 
-## M4 — Content
+## M4 — Content, in their own repo (or repos)
 
-- [ ] Peruskoulu physics drilling sets (valtakunnallinen koe level).
-- [ ] Peruskoulu chemistry drilling sets.
+- [ ] Peruskoulu physics drilling sets (national exam level).
+- [ ] Peruskoulu chemistry drilling sets (national exam level).
 - [ ] Later: mathematics, incl. geometry via JSXGraph if feasible.
 
 ## M5 — Possible extensions (not planned yet)

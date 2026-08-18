@@ -13,9 +13,7 @@ content repo (YAML)  --compile-->  .generated/qbank (XML + JSON)  --import-->  M
 ## Where the content lives
 
 The machinery is in this repo.
-The content is in a separate repo, located by `QBANK_CONTENT_DIR` —
-an absolute path, or one relative to this repo's root.
-Nothing here assumes any particular location for it.
+The content is in a separate folder, located by `QBANK_CONTENT_DIR`.
 
 ```sh
 QBANK_CONTENT_DIR=~/path/to/oivus-questions ./tools/qbank.sh all
@@ -39,6 +37,8 @@ and are what CI runs.
 
 Course and bank are taken from `QBANK_COURSE` and `QBANK_BANK` env vars
 (defaults to `qbank` and `qbank-main`); both are created if missing.
+Their display names come from `QBANK_COURSE_FULLNAME` and `QBANK_BANK_NAME`,
+and are used only when creating them.
 
 `import` also accepts `-n` (dry run) and `--force` (re-import unchanged files).
 

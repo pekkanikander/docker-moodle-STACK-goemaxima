@@ -105,16 +105,16 @@ as are the companion behaviour plugins.
 
 ## Question banks
 
-Questions are authored as YAML in a separate content repo, compiled to Moodle
+Questions are authored as YAML in a separate content directory, compiled to Moodle
 XML, and imported by CLI. The git tree is the source of truth: nothing is
 authored in the Moodle web UI, and anything edited there is overwritten by the
 next import. `qbank/README.md` documents the source format and what happens
 when an already-imported question changes.
 
-All commands below assume `QBANK_CONTENT_DIR` points at your content repo:
+All commands below assume `QBANK_CONTENT_DIR` points at your content directory:
 
 ```sh
-export QBANK_CONTENT_DIR=~/src/oivus-questions
+export QBANK_CONTENT_DIR=~/path/to/oivus-questions
 ```
 
 With `QBANK_CONTENT_DIR` unset, the fixtures in `qbank/fixtures/` are used;
