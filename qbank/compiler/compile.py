@@ -38,6 +38,9 @@ SCAFFOLDS = ("stated", "choice", "none")
 
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
+# A reading key becomes part of a Maxima variable name (ta_<key>).
+KEY_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+
 # Quiz behaviours worth using with STACK. Under 'adaptive' STACK swaps in the
 # adaptivemultipart behaviour per question, which grades each PRT on its own --
 # what the interpretation scaffold needs. adaptivemultipart cannot be named
@@ -151,6 +154,8 @@ def load_question(path: Path, source: dict) -> Question:
     readings: list[Reading] = []
     if interpretation:
         for entry in interpretation.get("readings", []):
+            if not KEY_RE.match(str(entry["key"])):
+                fail(path, f"reading key '{entry['key']}' must match {KEY_RE.pattern}")
             readings.append(
                 Reading(
                     key=entry["key"],
@@ -182,6 +187,8 @@ def load_question(path: Path, source: dict) -> Question:
         fail(path, "'answer.quantity' must name the symbol the readings stand for")
     if scaffold == "choice" and not interpretation.get("prompt"):
         fail(path, "scaffold 'choice' requires 'interpretation.prompt'")
+    if scaffold == "stated" and not interpretation.get("stated_prefix"):
+        fail(path, "scaffold 'stated' requires 'interpretation.stated_prefix'")
 
     return Question(
         path=path,
@@ -237,7 +244,7 @@ def stem_html(question: Question) -> str:
 
     if question.scaffold == "stated":
         intended = next(r for r in question.readings if r.intended)
-        prefix = question.interpretation.get("stated_prefix", "Tässä tehtävässä käytetään tulkintaa:")
+        prefix = question.interpretation["stated_prefix"]
         parts.append(f"<p><em>{prefix} {intended.label}.</em></p>")
 
     if question.scaffold == "choice":

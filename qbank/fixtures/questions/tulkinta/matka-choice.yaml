@@ -1,5 +1,5 @@
 id: fixture-matka-choice
-name: "Fixture: matka vai siirtymä (tulkinta valitaan)"
+name: "Fixture: kuljettu matka vai välimatka (valitaan tulkinta)"
 category: [Testi, Tulkinta]
 tags: [fixture, tulkinta, scaffold-choice]
 scaffold: choice
@@ -18,6 +18,7 @@ stem: |
 interpretation:
   weight: 0.4
   prompt: |
+    Fysiikassa nopeus v määritellään kaavalla v = s / t, jossa s on matka.
     Mitä sanalla <em>matka</em> tarkoitetaan tässä tehtävässä?
   readings:
     - key: reitti
@@ -25,10 +26,10 @@ interpretation:
       value: sx + sy
       intended: true
       why: "Aivan: matka mitataan kuljettua reittiä pitkin, joten molemmat osuudet lasketaan yhteen."
-    - key: siirtyma
+    - key: valimatka
       label: "matka on etäisyys lähtöpisteestä"
       value: sqrt(sx^2 + sy^2)
-      why: "Etäisyyttä lähtöpisteestä sanotaan siirtymäksi. Matka mitataan kuljettua reittiä pitkin."
+      why: "Etäisyyttä lähtöpisteestä sanotaan välimatkaksi tai siirtymäksi. Tässä tehtävässä matka mitataan kuljettua reittiä pitkin."
 
 answer:
   type: numerical
@@ -38,5 +39,7 @@ answer:
   boxsize: 8
 
 feedback: |
-  Kuljettu matka on {@sx@} m + {@sy@} m = {@sx + sy@} m.
-  Siirtymän suuruus olisi {@sqrt(sx^2 + sy^2)@} m.
+  <em>Kuljettu matka</em> on {@sx@} m + {@sy@} m = {@sx + sy@} m.
+  Lähtö- ja loppupisteen <em>välimatka</em> (eli siirtymä) on {@sqrt(sx^2 + sy^2)@} m.
+  Kysymyksenasettelusta riippuen sana <em>matka</em> voi tarkoittaa kumpaa tahansa.
+  Merkitys pitää päätellä siitä, miten kysymys on asetettu.

@@ -1,5 +1,5 @@
 id: fixture-matka-stated
-name: "Fixture: matka vai siirtymä (tulkinta annettu)"
+name: "Fixture: kuljettu matka vai välimatka (tulkinta annettu)"
 category: [Testi, Tulkinta]
 tags: [fixture, tulkinta, scaffold-stated]
 scaffold: stated
@@ -16,16 +16,17 @@ stem: |
   jonne hän kävelee {@sy@} metriä.
 
 interpretation:
+  stated_prefix: "Tässä tehtävässä käytetään tulkintaa:"
   readings:
     - key: reitti
       label: "matka on kuljetun reitin pituus"
       value: sx + sy
       intended: true
       why: "Matka mitataan kuljettua reittiä pitkin: {@sx@} m + {@sy@} m = {@sx + sy@} m."
-    - key: siirtyma
+    - key: valimatka
       label: "matka on etäisyys lähtöpisteestä"
       value: sqrt(sx^2 + sy^2)
-      why: "Tämä on siirtymän suuruus eli linnuntie-etäisyys lähtöpisteestä, {@sqrt(sx^2 + sy^2)@} m. Kysytty matka mitataan kuljettua reittiä pitkin."
+      why: "Tämä on välimatka (eli siirtymä) lähtöpisteestä, {@sqrt(sx^2 + sy^2)@} m. Tässä kysymyksessä sana <em>matka</em> tarkoittaa kuljettua reittiä. Tämän voi päätellä siitä, että kysymyksessä kuvataan reitin kulku."
 
 answer:
   type: numerical
@@ -38,5 +39,8 @@ feedback: |
   Reitti koostuu kahdesta osasta, joten kuljettu matka on
   {@sx@} m + {@sy@} m = {@sx + sy@} m.
 
-  Etäisyys lähtöpisteestä olisi {@sqrt(sx^2 + sy^2)@} m, mutta sitä sanotaan
-  siirtymäksi, ei matkaksi.
+  Etäisyys lähtöpisteestä (eli siirtymä) olisi {@sqrt(sx^2 + sy^2)@} m.
+  Koska tässä tehtävässä itse kysymyksenasettelussa kerrotaan,
+  mitä <em>reittiä</em> oppilas kulkee, tästä voidaan päätellä,
+  että tässä tehtävässä sana <em>matka</em> tarkoittaa kuljetun reitin pituutta,
+  ei lähtöpisteen ja loppupisteen välimatkaa.

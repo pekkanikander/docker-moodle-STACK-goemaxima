@@ -1,5 +1,5 @@
 id: fixture-matka-none
-name: "Fixture: matka vai siirtymä (ei tukea)"
+name: "Fixture: kuljettu matka vai välimatka (ei tukea)"
 category: [Testi, Tulkinta]
 tags: [fixture, tulkinta, scaffold-none]
 scaffold: none
@@ -21,10 +21,10 @@ interpretation:
       label: "matka on kuljetun reitin pituus"
       value: sx + sy
       intended: true
-    - key: siirtyma
+    - key: valimatka
       label: "matka on etäisyys lähtöpisteestä"
       value: sqrt(sx^2 + sy^2)
-      why: "Laskit etäisyyden lähtöpisteestä eli siirtymän suuruuden. Sanaa <em>matka</em> käytetään kuljetun reitin pituudesta."
+      why: "Laskit etäisyyden lähtöpisteestä eli välimatkan (eli siirtymän) suuruuden. Tässä tehtävässä sana <em>matka</em> tarkoittaa kuljetun reitin pituutta."
 
 answer:
   type: numerical
