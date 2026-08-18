@@ -106,16 +106,85 @@ as are the companion behaviour plugins.
 ## Question banks
 
 Questions are authored as YAML in a separate content repo, compiled to Moodle
-XML, and imported by CLI; the git tree is the source of truth and no question is
-authored in the web UI. See `qbank/README.md` for the source format and the
-update workflow.
+XML, and imported by CLI. The git tree is the source of truth: nothing is
+authored in the Moodle web UI, and anything edited there is overwritten by the
+next import. `qbank/README.md` documents the source format and what happens
+when an already-imported question changes.
+
+All commands below assume `QBANK_CONTENT_DIR` points at your content repo:
 
 ```sh
-QBANK_CONTENT_DIR=~/src/oivus-questions ./tools/qbank.sh all
+export QBANK_CONTENT_DIR=~/src/oivus-questions
 ```
 
 With `QBANK_CONTENT_DIR` unset, the fixtures in `qbank/fixtures/` are used;
 those are what CI runs.
+
+### 0. Start the local test environment and log in
+
+```sh
+docker compose --env-file .env.versions --env-file .env up -d
+docker compose --env-file .env.versions --env-file .env ps
+```
+
+Open `http://localhost:${MOODLE_HTTP_PORT}` once `moodle` reports healthy, and
+log in as `MOODLE_ADMIN_USER` with `MOODLE_ADMIN_PASSWORD` from `.env`. Those
+values are read at install time only, so a site installed from a different
+`.env` keeps the password it was installed with; see Troubleshooting below.
+
+For a pristine site, `./tools/clean-rebuild.sh` reinstalls from scratch and
+wipes local data.
+
+### 1. Edit the question bank
+
+Edit or add YAML files under `$QBANK_CONTENT_DIR/questions/` (one question per
+file) and `$QBANK_CONTENT_DIR/quizzes/`. `id:` is the permanent identity of a
+question and must never be renamed. Review the change as a git diff before
+importing it anywhere.
+
+### 2. Compile
+
+```sh
+./tools/qbank.sh compile
+```
+
+YAML becomes Moodle XML under `.generated/qbank`, in the `qbank-tools`
+container. Errors name the offending file and stop the run; nothing reaches
+Moodle. Each question is also put through STACK's own validation before import,
+because STACK otherwise saves an invalid question silently as broken and hidden.
+
+### 3. Load it into the local site
+
+```sh
+./tools/qbank.sh import     # questions into the question bank
+./tools/qbank.sh quizzes    # quiz activities
+./tools/qbank.sh test       # each question's own tests, through Maxima
+```
+
+or all four steps in order:
+
+```sh
+./tools/qbank.sh all
+```
+
+Unchanged files are skipped. An edited file keeping the same `id:` is added as a
+new Moodle *version* of the existing question, so earlier attempts stay intact.
+`./tools/qbank.sh import -n` dry-runs; `--force` re-imports unchanged files.
+
+`import` and `quizzes` print the course, bank and quiz they touched, with the
+Moodle course-module ids.
+
+### 4. See it in the browser
+
+Reload the page; there is nothing to clear or republish. Using the cmids printed
+in step 3:
+
+- question bank — `http://localhost:${MOODLE_HTTP_PORT}/mod/qbank/view.php?id=<cmid>`
+- quiz — `http://localhost:${MOODLE_HTTP_PORT}/mod/quiz/view.php?id=<cmid>`
+
+Preview a single question from the question bank, or use *Preview quiz* to work
+through the whole thing as a student would. A question already open in a browser
+tab keeps showing the version it was loaded with, so reload after an import.
 
 ## Local CI with `act`
 
@@ -126,8 +195,12 @@ CI runs on PRs, tags, releases, and manual dispatch; `act-ci.sh` uses amd64 emul
 
 The CI run creates `.env` by concatenating `.env.versions`, `.env.example` and `.env.ci`.
 If there is no `.env.ci`, CI generates a minimal one (relative `MOODLE_PERSISTENT_ROOT`,
-throwaway admin password).  That `.env` is used only by the CI run; it doesn't change your
-local `.env` if you have one.  For a local build, you don't need `.env.ci`.
+throwaway admin password).  For a local build, you don't need `.env.ci`.
+
+**`act-ci.sh` overwrites your local `.env`.**  `act --bind` mounts the working tree
+into the runner, so the CI step that writes `.env` writes *your* `.env`.  Back it up
+before running, and keep `MOODLE_PERSISTENT_ROOT` pointed somewhere other than
+`.ci-persistent`, which the CI run wipes.
 
 If you want to mimic the CI behaviour exactly, you can create a `.env.ci` and do
 ```
@@ -168,6 +241,16 @@ Backups and restore procedures are documented in `infra/BACKUP.md`.
 ## Troubleshooting
 - First start can take time; check `docker compose logs` for progress.
 - If `moodle-cron` logs "config.php not found", re-run `./init/scripts/moodle-init.sh`.
+- If the admin password in `.env` is refused, the site was installed from a different
+  `.env`.  Reset it to the current value rather than guessing:
+  ```sh
+  set -a; . ./.env; set +a
+  docker compose --env-file .env.versions --env-file .env exec -T -u www-data \
+    -e NEWUSER="$MOODLE_ADMIN_USER" -e NEWPASS="$MOODLE_ADMIN_PASSWORD" moodle php -r \
+    'define("CLI_SCRIPT", true); require("/var/www/html/config.php");
+     $u = $DB->get_record("user", ["username" => getenv("NEWUSER")]);
+     update_internal_user_password($u, getenv("NEWPASS"));'
+  ```
 
 ## Read-only goal
 The Moodle code tree should be read-only at runtime, but this is just a goal until validated.
