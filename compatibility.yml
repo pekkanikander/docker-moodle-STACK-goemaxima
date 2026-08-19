@@ -31,3 +31,4 @@ notes:
   - "MariaDB and goemaxima are internal-only (no host ports)."
   - "STACK source is pinned to a GitHub tag archive; behaviour plugin checksums are recorded in versions.yml."
   - "Compiled questions record stack_maxima_version in <stackversion>; it must match the STACK plugin version above."
+  - "oivus.pnr.iki.fi verified on this tuple 2026-08-19: qtype_stack version 2026062900, goemaxima 2026062900-1.2.0."
