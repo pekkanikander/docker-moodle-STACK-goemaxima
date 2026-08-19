@@ -79,6 +79,10 @@ To wipe local data, delete the directory or use `./tools/clean-rebuild.sh`:
 - `maxima` uses the goemaxima image and is internal-only (no host port).
 - `STACK` is baked into the Moodle image from a pinned GitHub tag archive.
 - `moodle-cron` runs Moodle's CLI cron every minute in a separate container.
+- `config.php` lives in the container's writable layer, so it does not survive a
+  container recreate. `moodle-init.sh` keeps the durable copy in `moodledata`,
+  and the container entrypoint restores it on start; rebuilding the image is
+  therefore safe, and `moodle-init.sh` is only for a first install.
 - `moodle` HTTP is bound to `127.0.0.1:${MOODLE_HTTP_PORT}` for use behind a host reverse proxy.
 
 In this setup, Apache serves `/var/www/html/public` and Moodle's `$CFG->dirroot` resolves
@@ -240,7 +244,9 @@ Backups and restore procedures are documented in `infra/BACKUP.md`.
 
 ## Troubleshooting
 - First start can take time; check `docker compose logs` for progress.
-- If `moodle-cron` logs "config.php not found", re-run `./init/scripts/moodle-init.sh`.
+- If `moodle-cron` logs "config.php not found", the site has never been installed
+  against this `moodledata`; run `./init/scripts/moodle-init.sh`. Do not run it
+  on an installed site: it deletes both copies of `config.php` first.
 - If the admin password in `.env` is refused, the site was installed from a different
   `.env`.  Reset it to the current value rather than guessing:
   ```sh

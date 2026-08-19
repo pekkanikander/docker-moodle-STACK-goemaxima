@@ -62,6 +62,7 @@ RUN set -eu; \
 # Use the `public/` sub-directory as web root to match Moodle's recommended structure.
 COPY docker/moodle/apache-moodle.conf /etc/apache2/sites-available/moodle.conf
 COPY docker/moodle/moodle-cron.sh /usr/local/bin/moodle-cron.sh
+COPY docker/moodle/entrypoint.sh /usr/local/bin/moodle-entrypoint.sh
 
 RUN set -eu; \
     echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf; \
@@ -72,7 +73,7 @@ RUN set -eu; \
     a2ensite moodle
 
 RUN set -eu; \
-    chmod 0755 /usr/local/bin/moodle-cron.sh; \
+    chmod 0755 /usr/local/bin/moodle-cron.sh /usr/local/bin/moodle-entrypoint.sh; \
     { \
       echo "SHELL=/bin/sh"; \
       echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"; \
@@ -145,3 +146,7 @@ RUN set -eu; \
 RUN set -eu; \
     mkdir -p "${MOODLE_DATA_DIR}"; \
     chown -R www-data:www-data "${MOODLE_DATA_DIR}"
+
+# Setting ENTRYPOINT resets the base image's CMD, so restate it.
+ENTRYPOINT ["/usr/local/bin/moodle-entrypoint.sh"]
+CMD ["apache2-foreground"]

@@ -102,7 +102,8 @@ Notes:
 - `admin` is in the `docker` group (no sudo needed for docker), but the group
   membership takes effect only on a fresh login after cloud-init.
 - When recreating the server on the existing volume (data present), do NOT
-  rerun `moodle-init.sh`; just `up -d`.
+  rerun `moodle-init.sh`; just `up -d`. The container entrypoint restores
+  `config.php` from `moodledata`, so a recreated container comes back installed.
 
 ## 7. Site posture checks (go-live policy)
 
@@ -137,5 +138,10 @@ docker compose --env-file .env.versions --env-file .env exec -T -u www-data mood
 ```
 
 Take a backup first: `sudo systemctl start moodle-db-backup.service` (see
-`infra/BACKUP.md`). Do NOT run `moodle-init.sh` on an installed site: it
-forces a fresh install.
+`infra/BACKUP.md`).
+
+Do NOT run `moodle-init.sh` on an installed site. It deletes `config.php` from
+both the container and `moodledata` before running the installer, so it destroys
+the durable copy the entrypoint restores from. There is no need for it here: a
+rebuilt container picks `config.php` up again on start, and `upgrade.php` does
+the rest.
