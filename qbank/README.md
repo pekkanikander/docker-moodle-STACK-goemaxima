@@ -179,9 +179,14 @@ The three rungs are a fading ladder:
 A question is written once per rung, with its own `id`, so that progress through
 the ladder is a matter of which questions are in the quiz.
 
-Under `choice`, a student who picks the wrong reading and then computes
-correctly for it scores 0 on the answer part.
-That is a deliberate choice: the question is about the reading.
+Under `choice`, the two marks are genuinely independent:
+the reading carries `weight` of the marks, and the answer is graded against
+the reading the student *selected*, not the intended one.
+Picking a misreading and then computing correctly for it therefore costs
+exactly `weight` and nothing more, and "sound method, wrong reading" is
+visible in the score itself, not only in the feedback.
+The answer is not graded until a reading has been selected —
+the student must commit to a reading first.
 
 ## Quiz source format
 

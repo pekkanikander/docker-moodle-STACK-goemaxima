@@ -366,8 +366,9 @@ def reading_nodes(
     tans_of,
     testoptions: str,
     readings: list[Reading],
+    intended_feedback: bool = True,
 ) -> str:
-    """A chain of nodes: node 0 is the intended reading, then one per misreading.
+    """A chain of nodes: node 0 is the credited answer, then one per misreading.
 
     Landing on node i > 0 means the answer is wrong but explicable, so that
     reading's explanation can be given instead of a bare 'incorrect'.
@@ -383,7 +384,7 @@ def reading_nodes(
         prt=prt,
         testoptions=testoptions,
         truescore=1.0,
-        truefeedback=f"<p>{intended.why}</p>" if intended.why else "",
+        truefeedback=f"<p>{intended.why}</p>" if intended_feedback and intended.why else "",
         falsenext=1 if misreadings else -1,
     )
     for offset, reading in enumerate(misreadings):
@@ -402,14 +403,14 @@ def reading_nodes(
     return nodes
 
 
-def render_prt(name: str, value: float, nodes: str) -> str:
+def render_prt(name: str, value: float, nodes: str, feedbackvariables: str = "") -> str:
     return (
         "    <prt>\n"
         f"      <name>{name}</name>\n"
         f"      <value>{value:.7f}</value>\n"
         "      <autosimplify>1</autosimplify>\n"
         "      <feedbackstyle>1</feedbackstyle>\n"
-        "      <feedbackvariables>\n        <text></text>\n      </feedbackvariables>\n"
+        f"      <feedbackvariables>\n        <text>{escape(feedbackvariables)}</text>\n      </feedbackvariables>\n"
         + nodes
         + "    </prt>\n"
     )
@@ -425,6 +426,25 @@ def prt_elements(question: Question) -> str:
         xml += render_prt("interp", weight, reading_nodes(
             "interp", "String", "interp", lambda r: maxima_string(r.key), "", question.readings
         ))
+        # The answer is graded against the reading the student selected, so a
+        # misreading costs exactly `weight` and correct execution of the chosen
+        # reading earns the rest. The two marks are independent.
+        pairs = ", ".join(
+            f"[{maxima_string(r.key)}, {'ta' if r.intended else f'ta_{r.key}'}]"
+            for r in question.readings
+        )
+        nodes = reading_nodes(
+            "ans",
+            answertest,
+            "ans1",
+            lambda r: "ta_sel" if r.intended else f"ta_{r.key}",
+            testoptions,
+            question.readings,
+            intended_feedback=False,
+        )
+        xml += render_prt("ans", 1.0 - weight, nodes,
+                          feedbackvariables=f"ta_sel : assoc(interp, [{pairs}]);")
+        return xml
 
     if question.readings:
         nodes = reading_nodes(
@@ -452,41 +472,46 @@ def prt_elements(question: Question) -> str:
 
 def qtest_elements(question: Question) -> str:
     """One test per reading: the intended one scores full marks, each
-    misreading must land on its own answer note."""
-    cases = [("ta", 0, 1.0, 0.0, None)]
-    for offset, reading in enumerate(r for r in question.readings if not r.intended):
-        cases.append((f"ta_{reading.key}", offset + 1, 0.0, question.penalty, reading.key))
+    misreading must land on its own answer note. Under `choice` every
+    misreading is tested both ways: selected and executed correctly (full
+    answer credit, reading credit lost), and answered without being selected
+    (named by the answer tree)."""
+    misreadings = [r for r in question.readings if not r.intended]
+
+    if question.scaffold == "choice":
+        intended = next(r for r in question.readings if r.intended)
+        # (ans1 value, interp key, ans score, ans note, interp score, interp note)
+        cases = [("ta", intended.key, 1.0, "ans-0-T", 1.0, "interp-0-T")]
+        for offset, reading in enumerate(misreadings):
+            node = offset + 1
+            cases.append((f"ta_{reading.key}", reading.key, 1.0, "ans-0-T", 0.0, f"interp-{node}-T"))
+            cases.append((f"ta_{reading.key}", intended.key, 0.0, f"ans-{node}-T", 1.0, "interp-0-T"))
+    else:
+        cases = [("ta", None, 1.0, "ans-0-T", None, None)]
+        for offset, reading in enumerate(misreadings):
+            cases.append((f"ta_{reading.key}", None, 0.0, f"ans-{offset + 1}-T", None, None))
 
     xml = ""
-    for number, (value, node, score, penalty, readingkey) in enumerate(cases, start=1):
-        note = f"ans-{node}-T"
+    for number, (value, chosen, score, note, iscore, inote) in enumerate(cases, start=1):
         inputs = f"      <testinput>\n        <name>ans1</name>\n        <value>{value}</value>\n      </testinput>\n"
-        expected = (
-            "      <expected>\n"
-            "        <name>ans</name>\n"
-            f"        <expectedscore>{score:.7f}</expectedscore>\n"
-            f"        <expectedpenalty>{penalty:.7f}</expectedpenalty>\n"
-            f"        <expectedanswernote>{note}</expectedanswernote>\n"
-            "      </expected>\n"
-        )
-        if question.scaffold == "choice":
-            intended = next(r for r in question.readings if r.intended)
-            chosen = readingkey or intended.key
+        expectations = [("ans", score, note)]
+        if chosen is not None:
             inputs += (
                 "      <testinput>\n"
                 "        <name>interp</name>\n"
                 f"        <value>{maxima_string(chosen)}</value>\n"
                 "      </testinput>\n"
             )
-            correct = chosen == intended.key
-            expected += (
-                "      <expected>\n"
-                "        <name>interp</name>\n"
-                f"        <expectedscore>{1.0 if correct else 0.0:.7f}</expectedscore>\n"
-                f"        <expectedpenalty>{penalty:.7f}</expectedpenalty>\n"
-                f"        <expectedanswernote>interp-{node}-T</expectedanswernote>\n"
-                "      </expected>\n"
-            )
+            expectations.append(("interp", iscore, inote))
+        expected = "".join(
+            "      <expected>\n"
+            f"        <name>{name}</name>\n"
+            f"        <expectedscore>{s:.7f}</expectedscore>\n"
+            f"        <expectedpenalty>{0.0 if s else question.penalty:.7f}</expectedpenalty>\n"
+            f"        <expectedanswernote>{n}</expectedanswernote>\n"
+            "      </expected>\n"
+            for name, s, n in expectations
+        )
         xml += (
             "    <qtest>\n"
             f"      <testcase>{number}</testcase>\n"
