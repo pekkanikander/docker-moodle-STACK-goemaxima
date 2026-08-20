@@ -305,7 +305,9 @@ def render_input(
         f"      <tans>{tans}</tans>\n"
         f"      <boxsize>{boxsize}</boxsize>\n"
         "      <strictsyntax>1</strictsyntax>\n"
-        "      <insertstars>0</insertstars>\n"
+        # 4 = insert stars for implied multiplication and for spaces, so
+        # students may write "2 m/s" or "2m/s" for 2*m/s.
+        "      <insertstars>4</insertstars>\n"
         f"      <syntaxhint>{syntaxhint}</syntaxhint>\n"
         "      <syntaxattribute>0</syntaxattribute>\n"
         "      <forbidwords></forbidwords>\n"
@@ -545,7 +547,7 @@ def render_question(question: Question, stackversion: str) -> str:
         + element("questionsimplify", 1)
         + element("assumepositive", 0)
         + element("assumereal", 0)
-        + element("decimals", ".")
+        + element("decimals", ",")
         + element("scientificnotation", "*10")
         + element("multiplicationsign", "dot")
         + element("sqrtsign", 1)
