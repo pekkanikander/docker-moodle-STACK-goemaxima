@@ -71,7 +71,7 @@ so the importer asks up front and refuses instead.
 
 ## Question source format
 
-One question per file, anywhere under `questions/` in the content repo.
+One question per file, anywhere in the content folder that `QBANK_CONTENT_DIR` points to.
 The file name is irrelevant; `id:` and `category:` decide everything.
 
 An example:
