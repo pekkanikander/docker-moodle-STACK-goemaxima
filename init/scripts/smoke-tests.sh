@@ -3,7 +3,7 @@ set -eu
 
 . ./init/scripts/init-env.sh
 
-MOODLE_HTTP_PORT="${MOODLE_HTTP_PORT:-8080}"
+MOODLE_HTTP_PORT="${MOODLE_HTTP_PORT:-8000}"
 
 echo "Checking Moodle HTTP..."
 if ! curl -fsS "http://localhost:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null; then

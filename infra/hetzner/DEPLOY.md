@@ -95,7 +95,7 @@ cd /opt/moodle-stack
 docker compose --env-file .env.versions --env-file .env up -d
 ./init/scripts/moodle-init.sh      # also sets $CFG->sslproxy for the https wwwroot
 ./init/scripts/stack-init.sh
-MOODLE_HTTP_PORT=8080 ./init/scripts/smoke-tests.sh
+MOODLE_HTTP_PORT=8000 ./init/scripts/smoke-tests.sh
 ```
 
 Notes:
