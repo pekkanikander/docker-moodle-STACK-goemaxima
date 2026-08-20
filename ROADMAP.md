@@ -72,6 +72,8 @@ With questions in git, the DB stays near-disposable until attempt history matter
 
 - Access for other homeschool families: outbound email, GDPR/privacy notice,
   account provisioning policy.
+- Windows support for the no-terminal local setup (`tools/start.sh` stays
+  POSIX; a Windows launcher is needed).
 - Phase 6 release-based deploy automation.
 - Moodle 5.2 line migration.
 

@@ -22,6 +22,8 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - `versions.yml` as the single source of truth for versions.
 - `compatibility.yml` for supported tuples and notes.
 - `init/scripts/*.sh` for bootstrap, install, config, and smoke tests.
+- `tools/start.sh` for one-shot local setup/start; `Setup Moodle.app` (built
+  from `tools/launcher/setup-moodle.applescript`) is its double-click launcher.
 - `docker/moodle/Dockerfile` for the custom Moodle build (Moodle + STACK).
 - `qbank/` for the question-bank machinery: `compiler/` (YAML → Moodle XML),
   `cli/` (import and quiz build, run inside the `moodle` container),

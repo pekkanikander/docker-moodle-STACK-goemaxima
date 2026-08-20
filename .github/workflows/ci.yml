@@ -57,10 +57,15 @@ jobs:
       - name: Infra script tests
         run: ./infra/hetzner/tests/run-tests.sh
 
+      - name: Check committed .env.versions freshness
+        run: |
+          set -eu
+          ./tools/update-versions.sh /tmp/env.versions.fresh
+          diff -u .env.versions /tmp/env.versions.fresh
+
       - name: Prepare env
         run: |
           set -eu
-          ./tools/update-versions.sh ./.env.versions
           if [ ! -f .env.ci ]; then
             # The absolute default persistent root would be created root-owned by
             # Docker; clean-rebuild.sh only wipes and opens up relative roots.
@@ -80,12 +85,26 @@ jobs:
       - name: Question bank fixtures
         run: ./tools/qbank.sh all
 
+      - name: First-run path (tools/start.sh)
+        run: |
+          set -eu
+          docker compose --env-file .env.versions --env-file .env down -v
+          rm -f .env
+          rm -rf .persistent
+          ./tools/start.sh
+          ./init/scripts/smoke-tests.sh
+          # Second run must detect the installed site and stay idempotent.
+          ./tools/start.sh
+          ./init/scripts/smoke-tests.sh
+
+      # Only .env.versions here: .env may be absent or replaced by this point,
+      # and it only carries optional overrides with compose-level defaults.
       - name: Logs on failure
         if: failure()
         run: |
-          docker compose ps
-          docker compose logs --no-color
+          docker compose --env-file .env.versions ps
+          docker compose --env-file .env.versions logs --no-color
 
       - name: Teardown
         if: always()
-        run: docker compose down
+        run: docker compose --env-file .env.versions down

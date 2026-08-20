@@ -69,6 +69,14 @@ dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
 log "Hiding the guest login button."
 dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --name=guestloginbutton --set=0
+if [ "${MOODLE_ADMIN_FORCE_PASSWORD_CHANGE:-0}" = "1" ]; then
+  log "Forcing an admin password change at first login."
+  dc exec -T -u www-data -e ADMIN_USER="${MOODLE_ADMIN_USER}" moodle php -r '
+    define("CLI_SCRIPT", true);
+    require "/var/www/html/config.php";
+    $u = $DB->get_record("user", ["username" => getenv("ADMIN_USER")], "*", MUST_EXIST);
+    set_user_preference("auth_forcepasswordchange", 1, $u);'
+fi
 log "Purging Moodle caches."
 dc exec -T moodle php /var/www/html/admin/cli/purge_caches.php
 log "Syncing config.php into moodledata."
