@@ -14,6 +14,7 @@ questions:
   - id: fixture-summa
   - id: fixture-liike-energia
   - id: fixture-tiheys
+  - id: fixture-nopeus-vapaa-yksikko
   - id: fixture-matka-stated
   - id: fixture-matka-choice
     maxmark: 2

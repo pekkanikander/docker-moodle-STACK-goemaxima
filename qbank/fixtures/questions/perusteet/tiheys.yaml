@@ -14,7 +14,7 @@ stem: |
 
 answer:
   type: units
-  prompt: "Laske kappaleen tiheys. Anna vastaus yksikköineen."
+  prompt: "Laske kappaleen tiheys. Anna vastaus yksikössä g/cm\\(^3\\)."
   formula: massa/tilavuus * g/cm^3
   syntaxhint: "?*g/cm^3"
 

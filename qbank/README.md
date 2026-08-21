@@ -96,6 +96,7 @@ answer:
   prompt: "What is …?"
   formula: sx/t                 # the correct answer, in Maxima
   tolerance: 0.01               # answer-test option; type-specific default
+  strict: false                 # units only: accept any compatible unit
   boxsize: 8
   syntaxhint: "?*m/s"
 
@@ -116,7 +117,14 @@ Answer types map onto STACK answer tests:
 | ----------- | -------------- | ------------------- |
 | `algebraic` | `AlgEquiv`     | — (exact, symbolic) |
 | `numerical` | `NumRelative`  | `0.01` |
-| `units`     | `UnitsRelative`| `0.01` |
+| `units`     | `UnitsStrictRelative`, then `UnitsRelative` | `0.01` |
+
+A `units` answer is graded strictly by default: full marks need the unit the
+`formula` uses, so the prompt should name it. A correct value in a different
+but compatible unit earns 0.75 of the marks and feedback asking for a
+conversion, instead of passing silently or failing bare. Set `strict: false`
+to accept any compatible unit for full marks, for questions where the student
+chooses the unit; the prompt should then say so.
 
 Randomised questions must list `seeds:`. Without deployed seeds a question has
 no fixed set of variants and its tests only ever exercise whichever one comes

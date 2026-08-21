@@ -31,6 +31,23 @@ ANSWER_TESTS = {
     "units": ("UnitsRelative", "0.01"),
 }
 
+# A units answer is graded strictly by default: full marks need the unit the
+# teacher's formula uses. A correct value in a different but compatible unit
+# would pass UnitsRelative silently and fail UnitsStrictRelative with nothing
+# usable, so strict questions chain both: a strict node for full marks, then a
+# UnitsRelative node for partial credit and a conversion prompt. `strict:
+# false` keeps plain UnitsRelative, for questions that let the student choose
+# the unit.
+UNIT_STRICT_TEST = "UnitsStrictRelative"
+UNIT_FALLBACK_SCORE = 0.75
+UNIT_FALLBACK_FEEDBACK = (
+    "<p>Lukuarvosi vastaa oikeaa arvoa, mutta vastausta pyydettiin toisessa "
+    "yksikössä. Muunna vastauksesi pyydettyyn yksikköön.</p>"
+)
+# Multiplying by 1000 ms/s leaves the quantity unchanged but the units
+# different, whatever they are: the question-test input for the fallback node.
+UNIT_FALLBACK_TESTINPUT = "1000*ta*ms/s"
+
 # Fading ladder, easiest first: the intended reading is stated, then chosen
 # from a list, then left to be inferred. Distractor feedback is given at every
 # rung, so a misreading is always named rather than just marked wrong.
@@ -183,6 +200,8 @@ def load_question(path: Path, source: dict) -> Question:
             fail(path, f"missing required key 'answer.{key}'")
     if answer.get("type", "algebraic") not in ANSWER_TESTS:
         fail(path, f"answer.type must be one of {', '.join(ANSWER_TESTS)}")
+    if "strict" in answer and answer.get("type") != "units":
+        fail(path, "'answer.strict' only applies to answer type 'units'")
     if readings and "quantity" not in answer:
         fail(path, "'answer.quantity' must name the symbol the readings stand for")
     if scaffold == "choice" and not interpretation.get("prompt"):
@@ -208,6 +227,10 @@ def load_question(path: Path, source: dict) -> Question:
         grade=float(source.get("grade", 1.0)),
         penalty=float(source.get("penalty", 0.1)),
     )
+
+
+def strict_units(question: Question) -> bool:
+    return question.answer.get("type") == "units" and question.answer.get("strict", True)
 
 
 def answer_expressions(question: Question) -> str:
@@ -369,28 +392,44 @@ def reading_nodes(
     testoptions: str,
     readings: list[Reading],
     intended_feedback: bool = True,
+    strict_test: str = "",
 ) -> str:
     """A chain of nodes: node 0 is the credited answer, then one per misreading.
 
     Landing on node i > 0 means the answer is wrong but explicable, so that
     reading's explanation can be given instead of a bare 'incorrect'.
+    With `strict_test`, node 0 uses it and node 1 is the compatible-unit
+    fallback, so the misreadings start at node 2.
     """
     intended = next(r for r in readings if r.intended)
     misreadings = [r for r in readings if not r.intended]
+    first_misreading = 2 if strict_test else 1
 
     nodes = render_node(
         index=0,
-        answertest=answertest,
+        answertest=strict_test or answertest,
         sans=sans,
         tans=tans_of(intended),
         prt=prt,
         testoptions=testoptions,
         truescore=1.0,
         truefeedback=f"<p>{intended.why}</p>" if intended_feedback and intended.why else "",
-        falsenext=1 if misreadings else -1,
+        falsenext=1 if strict_test or misreadings else -1,
     )
+    if strict_test:
+        nodes += render_node(
+            index=1,
+            answertest=answertest,
+            sans=sans,
+            tans=tans_of(intended),
+            prt=prt,
+            testoptions=testoptions,
+            truescore=UNIT_FALLBACK_SCORE,
+            truefeedback=UNIT_FALLBACK_FEEDBACK,
+            falsenext=2 if misreadings else -1,
+        )
     for offset, reading in enumerate(misreadings):
-        index = offset + 1
+        index = offset + first_misreading
         nodes += render_node(
             index=index,
             answertest=answertest,
@@ -400,7 +439,7 @@ def reading_nodes(
             testoptions=testoptions,
             truescore=0.0,
             truefeedback=f"<p>{reading.why}</p>" if reading.why else "",
-            falsenext=index + 1 if index < len(misreadings) else -1,
+            falsenext=index + 1 if offset < len(misreadings) - 1 else -1,
         )
     return nodes
 
@@ -422,6 +461,7 @@ def prt_elements(question: Question) -> str:
     weight = float(question.interpretation.get("weight", 0.5)) if question.scaffold == "choice" else 0.0
     answertest, defaulttolerance = ANSWER_TESTS[question.answer.get("type", "algebraic")]
     testoptions = str(question.answer.get("tolerance", defaulttolerance))
+    strict_test = UNIT_STRICT_TEST if strict_units(question) else ""
     xml = ""
 
     if question.scaffold == "choice":
@@ -443,6 +483,7 @@ def prt_elements(question: Question) -> str:
             testoptions,
             question.readings,
             intended_feedback=False,
+            strict_test=strict_test,
         )
         xml += render_prt("ans", 1.0 - weight, nodes,
                           feedbackvariables=f"ta_sel : assoc(interp, [{pairs}]);")
@@ -456,6 +497,28 @@ def prt_elements(question: Question) -> str:
             lambda r: "ta" if r.intended else f"ta_{r.key}",
             testoptions,
             question.readings,
+            strict_test=strict_test,
+        )
+    elif strict_test:
+        nodes = render_node(
+            index=0,
+            answertest=strict_test,
+            sans="ans1",
+            tans="ta",
+            prt="ans",
+            testoptions=testoptions,
+            truescore=1.0,
+            falsenext=1,
+        )
+        nodes += render_node(
+            index=1,
+            answertest=answertest,
+            sans="ans1",
+            tans="ta",
+            prt="ans",
+            testoptions=testoptions,
+            truescore=UNIT_FALLBACK_SCORE,
+            truefeedback=UNIT_FALLBACK_FEEDBACK,
         )
     else:
         nodes = render_node(
@@ -474,24 +537,31 @@ def prt_elements(question: Question) -> str:
 
 def qtest_elements(question: Question) -> str:
     """One test per reading: the intended one scores full marks, each
-    misreading must land on its own answer note. Under `choice` every
+    misreading must land on its own answer note. Strict units questions add a
+    case for the compatible-unit fallback node. Under `choice` every
     misreading is tested both ways: selected and executed correctly (full
     answer credit, reading credit lost), and answered without being selected
     (named by the answer tree)."""
     misreadings = [r for r in question.readings if not r.intended]
+    strict = strict_units(question)
+    first_misreading = 2 if strict else 1
 
     if question.scaffold == "choice":
         intended = next(r for r in question.readings if r.intended)
         # (ans1 value, interp key, ans score, ans note, interp score, interp note)
         cases = [("ta", intended.key, 1.0, "ans-0-T", 1.0, "interp-0-T")]
+        if strict:
+            cases.append((UNIT_FALLBACK_TESTINPUT, intended.key,
+                          UNIT_FALLBACK_SCORE, "ans-1-T", 1.0, "interp-0-T"))
         for offset, reading in enumerate(misreadings):
-            node = offset + 1
-            cases.append((f"ta_{reading.key}", reading.key, 1.0, "ans-0-T", 0.0, f"interp-{node}-T"))
-            cases.append((f"ta_{reading.key}", intended.key, 0.0, f"ans-{node}-T", 1.0, "interp-0-T"))
+            cases.append((f"ta_{reading.key}", reading.key, 1.0, "ans-0-T", 0.0, f"interp-{offset + 1}-T"))
+            cases.append((f"ta_{reading.key}", intended.key, 0.0, f"ans-{offset + first_misreading}-T", 1.0, "interp-0-T"))
     else:
         cases = [("ta", None, 1.0, "ans-0-T", None, None)]
+        if strict:
+            cases.append((UNIT_FALLBACK_TESTINPUT, None, UNIT_FALLBACK_SCORE, "ans-1-T", None, None))
         for offset, reading in enumerate(misreadings):
-            cases.append((f"ta_{reading.key}", None, 0.0, f"ans-{offset + 1}-T", None, None))
+            cases.append((f"ta_{reading.key}", None, 0.0, f"ans-{offset + first_misreading}-T", None, None))
 
     xml = ""
     for number, (value, chosen, score, note, iscore, inote) in enumerate(cases, start=1):
@@ -509,7 +579,7 @@ def qtest_elements(question: Question) -> str:
             "      <expected>\n"
             f"        <name>{name}</name>\n"
             f"        <expectedscore>{s:.7f}</expectedscore>\n"
-            f"        <expectedpenalty>{0.0 if s else question.penalty:.7f}</expectedpenalty>\n"
+            f"        <expectedpenalty>{0.0 if s == 1.0 else question.penalty:.7f}</expectedpenalty>\n"
             f"        <expectedanswernote>{n}</expectedanswernote>\n"
             "      </expected>\n"
             for name, s, n in expectations
