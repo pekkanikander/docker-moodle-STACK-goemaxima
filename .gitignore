@@ -2,6 +2,7 @@
 .env.ci
 .DS_Store
 .ci-persistent/
+.persistent/
 .vscode/
 .claude/settings.local.json
 .generated/

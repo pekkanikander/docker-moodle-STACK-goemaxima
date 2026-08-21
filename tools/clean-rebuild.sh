@@ -21,6 +21,11 @@ case "$root" in
     ;;
 esac
 
+# Pre-create the qbank build dir: the moodle service bind-mounts it, and a
+# missing bind-mount source would be created root-owned by dockerd, leaving
+# tools/qbank.sh unable to write into it on Linux hosts.
+mkdir -p "${QBANK_BUILD_DIR:-./.generated/qbank}"
+
 dc build --no-cache --pull
 
 dc up -d --force-recreate

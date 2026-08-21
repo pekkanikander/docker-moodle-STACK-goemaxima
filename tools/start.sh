@@ -80,6 +80,11 @@ if [ ! -d "$root" ]; then
   chmod -R 777 "$root"
 fi
 
+# Pre-create the qbank build dir: the moodle service bind-mounts it, and a
+# missing bind-mount source would be created root-owned by dockerd, leaving
+# tools/qbank.sh unable to write into it on Linux hosts.
+mkdir -p "${QBANK_BUILD_DIR:-./.generated/qbank}"
+
 notify "Building Docker images. The first run downloads a lot; this can take several minutes."
 dc build
 notify "Starting services."

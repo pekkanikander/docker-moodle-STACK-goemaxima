@@ -19,6 +19,10 @@ if [ ! -d "$QBANK_CONTENT_DIR" ]; then
   die "QBANK_CONTENT_DIR does not exist: ${QBANK_CONTENT_DIR}"
 fi
 mkdir -p "$QBANK_BUILD_DIR"
+if [ ! -w "$QBANK_BUILD_DIR" ]; then
+  die "QBANK_BUILD_DIR is not writable: ${QBANK_BUILD_DIR}
+Likely created root-owned by 'docker compose up'; remove it and rerun."
+fi
 
 compile() {
   dc build qbank-tools
