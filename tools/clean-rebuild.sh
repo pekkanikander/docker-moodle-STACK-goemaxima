@@ -25,4 +25,5 @@ dc build --no-cache --pull
 
 dc up -d --force-recreate
 ./init/scripts/moodle-init.sh
+./init/scripts/lang-init.sh
 ./init/scripts/stack-init.sh

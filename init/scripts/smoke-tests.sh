@@ -37,8 +37,8 @@ if ($errors) {
 }
 '
 
-echo "Checking STACK settings and noreply address..."
-dc exec -T moodle php -r '
+echo "Checking STACK settings, noreply address and languages..."
+dc exec -T -e EXPECTED_LANG="${MOODLE_LANG:-en}" -e EXPECTED_LANGPACKS="${MOODLE_LANGPACKS:-}" moodle php -r '
 define("CLI_SCRIPT", true);
 require "/var/www/html/config.php";
 $errors = [];
@@ -58,6 +58,18 @@ foreach ($expected as $key) {
 $noreply = get_config("core", "noreplyaddress");
 if (!$noreply) {
   $errors[] = "core/noreplyaddress is empty";
+}
+$lang = get_config("core", "lang");
+if ($lang !== getenv("EXPECTED_LANG")) {
+  $errors[] = "core/lang is " . var_export($lang, true) . ", expected " . getenv("EXPECTED_LANG");
+}
+if (!get_config("core", "autolang")) {
+  $errors[] = "core/autolang is off; browser language autodetect will not work";
+}
+foreach (preg_split("/[\s,]+/", trim(getenv("EXPECTED_LANGPACKS")), -1, PREG_SPLIT_NO_EMPTY) as $code) {
+  if ($code !== "en" && !is_dir("$CFG->dataroot/lang/$code")) {
+    $errors[] = "language pack " . $code . " is not installed";
+  }
 }
 if ($errors) {
   fwrite(STDERR, implode("\n", $errors) . "\n");

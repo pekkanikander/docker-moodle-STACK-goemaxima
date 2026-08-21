@@ -127,6 +127,9 @@ services:
         condition: service_healthy
     networks:
       - backend
+      # frontend, unlike the other internal services: Moodle's scheduled
+      # update_langpacks_task has to reach download.moodle.org.
+      - frontend
 
 volumes:
   secrets:

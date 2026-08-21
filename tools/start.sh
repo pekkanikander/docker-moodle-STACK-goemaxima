@@ -52,6 +52,11 @@ MOODLE_ADMIN_PASSWORD=Change-me!
 MOODLE_ADMIN_FORCE_PASSWORD_CHANGE=1
 MOODLE_NOREPLY_EMAIL=noreply@example.com
 
+# Finnish is installed alongside English; browsers asking for Finnish get it,
+# everything else falls back to MOODLE_LANG.
+MOODLE_LANGPACKS=fi
+MOODLE_LANG=en
+
 MOODLE_PERSISTENT_ROOT=./.persistent
 
 MARIADB_UID=2001
@@ -86,6 +91,8 @@ else
   notify "Installing Moodle. This takes a few minutes."
   ./init/scripts/moodle-init.sh
 fi
+notify "Configuring languages."
+./init/scripts/lang-init.sh
 notify "Configuring STACK."
 ./init/scripts/stack-init.sh
 

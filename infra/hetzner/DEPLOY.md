@@ -87,6 +87,8 @@ On the VM (`ssh moodle-hetzner`), edit `/opt/moodle-stack/.env` (nano or vi):
 - `MOODLE_ADMIN_EMAIL`, `MOODLE_ADMIN_PASSWORD` (real values; the password is
   the actual admin login)
 - `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_NOREPLY_EMAIL`
+- `MOODLE_LANGPACKS` (e.g. `fi`) and `MOODLE_LANG` (fallback, `en`); `.env.example`
+  installs no packs, so this must be set here to get anything but English
 
 Then:
 
@@ -94,6 +96,7 @@ Then:
 cd /opt/moodle-stack
 docker compose --env-file .env.versions --env-file .env up -d
 ./init/scripts/moodle-init.sh      # also sets $CFG->sslproxy for the https wwwroot
+./init/scripts/lang-init.sh        # language packs + default language
 ./init/scripts/stack-init.sh
 MOODLE_HTTP_PORT=8000 ./init/scripts/smoke-tests.sh
 ```
@@ -104,6 +107,9 @@ Notes:
 - When recreating the server on the existing volume (data present), do NOT
   rerun `moodle-init.sh`; just `up -d`. The container entrypoint restores
   `config.php` from `moodledata`, so a recreated container comes back installed.
+- `lang-init.sh`, unlike `moodle-init.sh`, is safe to rerun at any time. That is
+  how an already-installed site gets a language pack: add the code to
+  `MOODLE_LANGPACKS` and run it again.
 
 ## 7. Site posture checks (go-live policy)
 
@@ -114,6 +120,15 @@ docker compose --env-file .env.versions --env-file .env exec -T moodle \
   php /var/www/html/admin/cli/cfg.php --name=registerauth        # must be empty (no self-registration)
 docker compose --env-file .env.versions --env-file .env exec -T moodle \
   php /var/www/html/admin/cli/cfg.php --name=guestloginbutton    # 0 = hidden
+```
+
+`lang-init.sh` sets these:
+
+```sh
+docker compose --env-file .env.versions --env-file .env exec -T moodle \
+  php /var/www/html/admin/cli/cfg.php --name=lang                # fallback language
+docker compose --env-file .env.versions --env-file .env exec -T moodle \
+  php /var/www/html/admin/cli/cfg.php --name=autolang            # 1 = browser language wins
 ```
 
 Accounts are created manually in the admin UI (*Site administration → Users*).
