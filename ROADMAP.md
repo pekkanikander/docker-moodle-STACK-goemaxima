@@ -16,13 +16,14 @@ interpretation choice, with the scaffolding faded over time.
 
 ## M0 — Versions and repo hygiene (done 2026-08)
 
-- [x] Bump to Moodle 5.1.6 (Aug 2026 security release), STACK 4.13.1,
+- [x] Bump to Moodle 5.1.6 (Aug 2026 security release), STACK 4.13.0,
       goemaxima 2026062900-1.2.0; refresh behaviour-plugin tags and fill the
-      missing checksums in `versions.yml`.
+      missing checksums in `versions.yml`. (STACK 4.13.1 needs stackmaxima
+      2026080600, for which no goemaxima release exists yet; see `versions.yml`.)
 - Policy: stay on the Moodle 5.1 line for now; evaluate 5.2 later as a separate
   update PR. MariaDB 11.4 (LTS to 2029) and PHP 8.3 stay.
 
-## M1 — Hosted go-live (hetzner-hosting-task.md Phases 1–4, re-scoped)
+## M1 — Hosted go-live
 
 - [x] Fix provisioning defects: `hcloud-create.sh` missing `--image`/`--type`,
       firewall never created, `docker-compose-plugin` not in Ubuntu repos.
@@ -35,10 +36,10 @@ interpretation choice, with the scaffolding faded over time.
       image build; manual steps are `.env` secrets + init scripts (DEPLOY.md).
       Phase 6 (release-artefact automation, deploy user, forced-command key) is
       **deferred** until an update cadence justifies it.
-- [x] Site posture at go-live: self-registration off, guest login hidden
-      (set by `moodle-init.sh`), accounts created manually, minimal plugin
-      surface. Outbound email remains out of scope while there is a single
-      learner (admin resets passwords by hand).
+- [x] Site posture at go-live: guest login hidden (set by `moodle-init.sh`),
+      self-registration at Moodle's default (off), accounts created manually,
+      minimal plugin surface. Outbound email remains out of scope while there
+      is a single learner (admin resets passwords by hand).
 
 ## M2 — Backups and restore drill (Phase 5)
 
@@ -74,8 +75,19 @@ With questions in git, the DB stays near-disposable until attempt history matter
   account provisioning policy.
 - Windows support for the no-terminal local setup (`tools/start.sh` stays
   POSIX; a Windows launcher is needed).
-- Phase 6 release-based deploy automation.
+- Release-based deploy automation: GitHub release artefact with checksums,
+  `deploy` user with a forced-command SSH key, root-owned update script with
+  tight sudoers, rollback to last-known-good. Deferred until the update
+  cadence justifies it; until then, `infra/hetzner/DEPLOY.md` documents the
+  manual deploy.
+- Server hardening leftovers: fail2ban (or equivalent), HSTS once stable,
+  minimal monitoring (disk-usage threshold, external uptime check).
+- Real production at `oivus.fi` (or similar; domain not yet registered) —
+  `oivus.pnr.iki.fi` is the staging environment. Before production go-live:
+  set `display_errors=0` in the Moodle image (deliberately 1 for now, to
+  surface errors while staging).
 - Moodle 5.2 line migration.
+- Renovate (or similar) update PRs, grouped and CI-gated.
 
 ## Planned: backup security session
 
@@ -89,6 +101,6 @@ in `infra/BACKUP.md` (prefer an older weekly, audit users and tokens).
 
 ## Related documents
 
-- `hetzner-hosting-task.md` — detailed hosting plan (Phases 0–7; Phase 6 deferred).
-- `moodle-stack-compose-task.md` — original project brief.
+- `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
+- `infra/BACKUP.md` — backup/restore architecture and runbooks.
 - `notes/` — research notes behind version and design decisions.

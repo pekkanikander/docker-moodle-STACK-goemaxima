@@ -60,7 +60,7 @@ Or run the steps yourself:
 
 ## Configuration
 
-The local `.env` (or `.env.ci` for CI, see below) override defaults generated from `versions.yml` and
+The local `.env` (or `.env.ci` for CI, see below) overrides defaults generated from `versions.yml` and
 those in `docker-compose.yml` and in the scripts, if needed.
 Common overrides:
 - `MOODLE_ADMIN_PASSWORD`
@@ -284,7 +284,7 @@ so CI and local runs don't reuse stale DB data with new secrets. For absolute pa
 
 ## Hosting
 Production hosting (Hetzner VM, Caddy TLS, `oivus.pnr.iki.fi`) is documented in
-`infra/hetzner/DEPLOY.md`; the underlying plan is `hetzner-hosting-task.md`.
+`infra/hetzner/DEPLOY.md`.
 Backups and restore procedures are documented in `infra/BACKUP.md`.
 
 ## Updates
@@ -292,11 +292,10 @@ Backups and restore procedures are documented in `infra/BACKUP.md`.
 - `compatibility.yml` captures supported tuples and upgrade notes.
 - Renovate (planned) will open update PRs and group related changes.
 
-**NOTE! The following are Work in Progress, not there yet**
-
 ## Backups
-- Back up the MariaDB and `moodledata` directories under `MOODLE_PERSISTENT_ROOT`.
-- Test restores by bringing up fresh containers and verifying Moodle starts and data is present.
+The hosted instance has automated dumps, offsite pulls and restore runbooks;
+see `infra/BACKUP.md`. For a local setup, back up the MariaDB and `moodledata`
+directories under `MOODLE_PERSISTENT_ROOT`.
 
 ## Troubleshooting
 - First start can take time; check `docker compose logs` for progress.

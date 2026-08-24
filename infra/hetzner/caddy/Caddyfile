@@ -2,7 +2,7 @@
 #
 # - TLS certificates via automatic Let's Encrypt (HTTP-01); port 80 must stay open.
 # - HTTP -> HTTPS redirect is automatic in Caddy.
-# - No HSTS until go-live is stable (hetzner-hosting-task.md Phase 3).
+# - No HSTS until go-live is stable (see ROADMAP.md, server hardening leftovers).
 
 oivus.pnr.iki.fi {
 	encode zstd gzip

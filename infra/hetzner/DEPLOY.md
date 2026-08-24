@@ -1,8 +1,8 @@
 # Go-live runbook: Hetzner VM for oivus.pnr.iki.fi
 
-Concrete steps for hetzner-hosting-task.md Phases 1–4. Run the macOS steps from
-the repo root. Cloud-init automates everything up to (but excluding) the `.env`
-secrets and the init scripts.
+Concrete steps for provisioning, DNS, TLS and first deploy. Run the macOS
+steps from the repo root. Cloud-init automates everything up to (but
+excluding) the `.env` secrets and the init scripts.
 
 ## 1. One-time macOS preparation
 
@@ -113,7 +113,8 @@ Notes:
 
 ## 7. Site posture checks (go-live policy)
 
-`moodle-init.sh` sets these; verify rather than trust:
+Verify rather than trust (`moodle-init.sh` hides the guest login button;
+self-registration is off by Moodle default, not set explicitly):
 
 ```sh
 docker compose --env-file .env.versions --env-file .env exec -T moodle \
