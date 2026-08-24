@@ -5,17 +5,24 @@ with pinned versions and a custom Moodle image.
 
 ## Quickstart (no terminal needed)
 
-1. Install [GitHub Desktop](https://desktop.github.com/) and use it to clone
-   this repository: on the repository's GitHub page, choose
-   *Code ▾ → Open with GitHub Desktop*. The clone lands in
-   `~/Documents/GitHub/docker-moodle-STACK-goemaxima` by default.
-   Do **not** download the repository as a ZIP: macOS quarantines the
-   unpacked files and refuses to run the setup app.
+1. Install this repository
+   1.1. Download [GitHub Desktop](https://desktop.github.com/) and start it.
+      If you don't have and don't want a GitHub account,
+      select "Skip this step" on the registration pane.
+   1.2. In GitHub Desktop choose `File → Clone repository → URL`,
+      paste https://github.com/pekkanikander/docker-moodle-STACK-goemaxima,
+      and click Clone.
+      The clone lands in `~/Documents/GitHub/docker-moodle-STACK-goemaxima` by default.
+
+      Do **not** download the repository as a ZIP: macOS quarantines the
+      unpacked files and refuses to run the setup app.
+
 2. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
    (or OrbStack) and start it.
+
 3. In the cloned folder, double-click **Setup Moodle**. The first run
-   downloads and builds everything and takes several minutes; progress
-   appears as notifications. When done, the browser opens the Moodle login
+   downloads and builds everything and takes several minutes; a progress
+   window shows the current phase. When done, the browser opens the Moodle login
    page and a dialog shows the temporary credentials
    (username `admin`, password `Change-me!`). Moodle asks you to choose a
    new password at first login.
@@ -297,8 +304,8 @@ Backups and restore procedures are documented in `infra/BACKUP.md`.
 - If macOS refuses to open **Setup Moodle** ("cannot be opened" /
   "unidentified developer"), the repo was downloaded as a ZIP and quarantined.
   Delete it and clone with GitHub Desktop (or `git clone`) instead.
-- On first run, macOS may ask to allow access to your Documents folder and to
-  show notifications; both are expected.
+- On first run, macOS may ask to allow access to your Documents folder;
+  this is expected.
 - If `moodle-cron` logs "config.php not found", the site has never been installed
   against this `moodledata`; run `./init/scripts/moodle-init.sh`. Do not run it
   on an installed site: it deletes both copies of `config.php` first.
