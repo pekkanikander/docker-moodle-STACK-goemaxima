@@ -86,11 +86,13 @@ mkdir -p "${QBANK_BUILD_DIR:-./.generated/qbank}"
 phase "Building Docker images. The first run downloads a lot; this can take several minutes."
 dc build
 phase "Starting services."
-dc up -d
-
 if [ -f "$root/moodledata/config.php" ]; then
+  dc up -d
   phase "Moodle is already installed; skipping installation."
 else
+  # A wiped persistent root leaves already-running containers with orphaned
+  # bind mounts; recreate them so the mounts attach to the fresh directories.
+  dc up -d --force-recreate
   phase "Installing Moodle. This takes a few minutes."
   ./init/scripts/moodle-init.sh
 fi
