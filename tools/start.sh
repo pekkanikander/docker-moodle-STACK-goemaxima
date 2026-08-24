@@ -72,11 +72,15 @@ fi
 . ./init/scripts/init-env.sh
 
 root="${MOODLE_PERSISTENT_ROOT:-/srv/moodle-persistent}"
-if [ ! -d "$root" ]; then
-  mkdir -p "$root/mariadb" "$root/moodledata" "$root/backups/db"
-  # Container uids (www-data, mariadb) must be able to write on Linux hosts.
-  chmod -R 777 "$root"
-fi
+# Create each subdirectory that is missing, not only on a missing root: a
+# bind-mount source dockerd has to create would be root-owned on Linux hosts.
+for dir in mariadb moodledata backups backups/db; do
+  if [ ! -d "$root/$dir" ]; then
+    mkdir -p "$root/$dir"
+    # Container uids (www-data, mariadb) must be able to write on Linux hosts.
+    chmod 777 "$root/$dir"
+  fi
+done
 
 # Pre-create the qbank build dir: the moodle service bind-mounts it, and a
 # missing bind-mount source would be created root-owned by dockerd, leaving
