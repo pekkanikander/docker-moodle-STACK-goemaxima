@@ -10,8 +10,15 @@ root="${MOODLE_PERSISTENT_ROOT:-/srv/moodle-persistent}"
 case "$root" in
   /*)
     if [ "${PURGE_PERSISTENT:-0}" = "1" ]; then
-      rm -rf "$root"
-      mkdir -p "$root/mariadb" "$root/moodledata" "$root/backups/db"
+      # Empty the data directories in place: the root may be a mountpoint
+      # (rm -rf of it would fail) and the directories carry deliberate
+      # ownership and modes (e.g. cloud-init's on the server) that must
+      # survive the purge. Backups are kept: a purge may well be followed
+      # by a restore.
+      for dir in mariadb moodledata; do
+        mkdir -p "$root/$dir"
+        find "$root/$dir" -mindepth 1 -delete
+      done
     fi
     ;;
   *)

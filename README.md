@@ -120,7 +120,9 @@ ${MOODLE_PERSISTENT_ROOT}/
 This data persists across `docker compose down -v` (only the `secrets` volume is removed).
 To wipe local data, delete the directory or use `./tools/clean-rebuild.sh`:
 - If `MOODLE_PERSISTENT_ROOT` is a relative path, `clean-rebuild` will wipe it.
-- If it is an absolute path, set `PURGE_PERSISTENT=1` to wipe it.
+- If it is an absolute path, set `PURGE_PERSISTENT=1` to empty `mariadb/` and
+  `moodledata/` in place; the directories themselves (with their ownership)
+  and `backups/` are kept.
 
 ## What runs where
 - `moodle` is a custom image built from `php:<version>-apache` + Moodle release tarball.
@@ -280,7 +282,8 @@ If you need a pristine rebuild (rebuilds without cache and prunes dangling image
 ```
 `clean-rebuild` also resets bind-mounted data for relative `MOODLE_PERSISTENT_ROOT` values,
 so CI and local runs don't reuse stale DB data with new secrets. For absolute paths, set
-`PURGE_PERSISTENT=1` to wipe the persistent root.
+`PURGE_PERSISTENT=1` to empty `mariadb/` and `moodledata/` in place (the directories and
+`backups/` are kept).
 
 ## Hosting
 Production hosting (Hetzner VM, Caddy TLS, `oivus.pnr.iki.fi`) is documented in
