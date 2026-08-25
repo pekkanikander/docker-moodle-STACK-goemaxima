@@ -140,24 +140,90 @@ Accounts are created manually in the admin UI (*Site administration → Users*).
 - Log in as admin; *Site administration → Plugins → Question types → STACK*
   health check passes (Maxima connection).
 
-## Updating later (manual deploy)
+## Updating later
 
-```sh
-ssh moodle-hetzner
-cd /opt/moodle-stack
-git fetch --tags && git checkout <new-tag>
-./tools/update-versions.sh
-docker compose --env-file .env.versions --env-file .env build
-docker compose --env-file .env.versions --env-file .env up -d
-docker compose --env-file .env.versions --env-file .env exec -T -u www-data moodle \
-  php /var/www/html/admin/cli/upgrade.php --non-interactive
-```
-
-Take a backup first: `sudo systemctl start moodle-db-backup.service` (see
-`infra/BACKUP.md`).
+An installed server is updated by checking out the new commit and running
+`infra/hetzner/scripts/server-update.sh`. Both the automated and the manual
+update path (below) use that same script; it performs a database backup,
+re-runs `server-bootstrap.sh` (as root: Caddyfile, backup units,
+`.env.versions`, image build), then `up -d`, `upgrade.php`, and the smoke
+tests. It fails fast and leaves state in place for manual investigation.
 
 Do NOT run `moodle-init.sh` on an installed site. It deletes `config.php` from
 both the container and `moodledata` before running the installer, so it destroys
 the durable copy the entrypoint restores from. There is no need for it here: a
 rebuilt container picks `config.php` up again on start, and `upgrade.php` does
-the rest.
+the rest. Likewise never `docker compose down -v`: it destroys the `secrets`
+volume holding the generated DB credentials. `server-update.sh` contains
+neither.
+
+### Automated update (GitHub Actions)
+
+The `Deploy staging` workflow deploys a CI-validated commit over SSH:
+
+```sh
+gh workflow run deploy-staging.yml -f ref=main
+```
+
+(or *Actions → Deploy to staging environment → Run workflow*). It resolves
+the ref to a
+commit SHA, refuses to deploy unless that exact SHA has a successful `CI`
+run, then SSHes in with a restricted deploy key. On the server the key is
+forced to run `infra/hetzner/scripts/deploy-cmd.sh`, which accepts only a full
+SHA of a commit already on origin, checks it out, and runs
+`server-update.sh` from the new checkout. Finally the workflow curls
+`https://oivus.pnr.iki.fi/login/index.php` from outside, covering Caddy and
+TLS.
+
+Rollback: re-run the workflow with the previous SHA (each deploy log prints
+it as `previous:`); restore the database per `infra/BACKUP.md` if
+`upgrade.php` migrated the schema. Commits from before the push-to-main CI
+trigger have no CI run and are blocked — run CI on them first
+(`gh workflow run ci.yml --ref <ref>`) or update manually.
+
+One-time setup:
+
+1. Generate a dedicated deploy key (do not reuse the admin key):
+
+   ```sh
+   ssh-keygen -t ed25519 -a 64 -f ~/.ssh/to_moodle_hetzner_deploy_ed25519 \
+     -C moodle-hetzner-deploy-gha -N ""
+   ```
+
+2. Register it on the server — append to `/home/admin/.ssh/authorized_keys`,
+   as one line:
+
+   ```
+   restrict,command="/opt/moodle-stack/infra/hetzner/scripts/deploy-cmd.sh" ssh-ed25519 <pubkey> moodle-hetzner-deploy-gha
+   ```
+
+3. Create the `staging` GitHub environment and its secrets (the known_hosts
+   line comes from your own `~/.ssh/known_hosts`, i.e. the host key you
+   already trust):
+
+   ```sh
+   gh api -X PUT repos/pekkanikander/docker-moodle-STACK-goemaxima/environments/staging
+   gh secret set DEPLOY_SSH_KEY --env staging < ~/.ssh/to_moodle_hetzner_deploy_ed25519
+   gh secret set DEPLOY_PORT --env staging --body 33101
+   gh variable set DEPLOY_KNOWN_HOSTS --env staging \
+     --body "$(ssh-keygen -F '[oivus.pnr.iki.fi]:33101' | grep -v '^#')"
+   ```
+
+### Manual update
+
+As an alternative to the Github Actions based automated update,
+you can update the server manually, with the following commands:
+
+```sh
+ssh moodle-hetzner
+cd /opt/moodle-stack
+git fetch --tags origin
+git checkout --detach <tag-or-sha>   # or: git checkout --detach origin/main
+./infra/hetzner/scripts/server-update.sh
+```
+
+The intention here is that the server repo always sits
+detached at the deployed commit, both when updating via Github Actions
+and when updating manually. In particular, do not `git checkout main`:
+that would check out the *local* `main`, which `git fetch` does not move,
+and silently deploy an old commit.

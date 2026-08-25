@@ -161,7 +161,10 @@ grep -q 'HostName other.example.org' "$cfg" || fail "unrelated host block damage
 grep -q 'HostName tail.example.org' "$cfg" || fail "following host block damaged"
 
 # --- Syntax checks for scripts not exercised by the scenarios above ----------
-for s in infra/hetzner/scripts/server-bootstrap.sh init/scripts/backup-db.sh \
+for s in infra/hetzner/scripts/server-bootstrap.sh \
+         infra/hetzner/scripts/deploy-cmd.sh \
+         infra/hetzner/scripts/server-update.sh \
+         init/scripts/backup-db.sh \
          init/scripts/restore-db.sh infra/mbp/deploy.sh \
          infra/mbp/bin/mbp-sync.sh infra/mbp/bin/mbp-restore-db.sh \
          infra/mbp/bin/mbp-restore-moodledata.sh; do

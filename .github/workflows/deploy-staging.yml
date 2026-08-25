@@ -1,0 +1,69 @@
+name: Deploy to staging environment (oivus.pnr.iki.fi)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy"
+        required: true
+        default: main
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      DEPLOY_HOST: oivus.pnr.iki.fi
+      DEPLOY_USER: admin
+    steps:
+      - name: Gate on a successful CI run
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -eu
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/$REF" --jq .sha)
+          echo "Resolved $REF -> $sha"
+          count=$(gh api \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$sha&status=success" \
+            --jq .total_count)
+          if [ "$count" -eq 0 ]; then
+            echo "ERROR: no successful CI run for $sha; refusing to deploy" >&2
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      # The private key goes into ssh-agent via stdin and never touches the
+      # runner's disk; only the (public) pinned host key is written out.
+      # The server side is a forced command (deploy-cmd.sh): the SHA is the
+      # whole SSH "command", read there from SSH_ORIGINAL_COMMAND.
+      - name: Deploy
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          SHA: ${{ steps.gate.outputs.sha }}
+        run: |
+          set -eu
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/deploy_known_hosts"
+          eval "$(ssh-agent -s)" > /dev/null
+          printf '%s\n' "$SSH_KEY" | ssh-add -q -
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/deploy_known_hosts" \
+            -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" "$SHA"
+
+      # Exercises Caddy + TLS, which the VM-local smoke tests cannot.
+      - name: External health check
+        run: curl -fsS "https://$DEPLOY_HOST/login/index.php" > /dev/null

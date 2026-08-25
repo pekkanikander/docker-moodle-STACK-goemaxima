@@ -7,6 +7,11 @@ set -eu
 REPO_DIR=${REPO_DIR:-/opt/moodle-stack}
 cd "$REPO_DIR"
 
+# Under cloud-init snap yq resolved via the inherited root PATH; under sudo
+# from server-update.sh that depends on sudoers secure_path. Be deterministic.
+PATH="$PATH:/snap/bin"
+export PATH
+
 install -o root -g root -m 0644 infra/hetzner/caddy/Caddyfile /etc/caddy/Caddyfile
 systemctl reload caddy
 

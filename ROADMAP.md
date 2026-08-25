@@ -75,11 +75,12 @@ With questions in git, the DB stays near-disposable until attempt history matter
   account provisioning policy.
 - Windows support for the no-terminal local setup (`tools/start.sh` stays
   POSIX; a Windows launcher is needed).
-- Release-based deploy automation: GitHub release artefact with checksums,
-  `deploy` user with a forced-command SSH key, root-owned update script with
-  tight sudoers, rollback to last-known-good. Deferred until the update
-  cadence justifies it; until then, `infra/hetzner/DEPLOY.md` documents the
-  manual deploy.
+- Release-based deploy automation, remaining parts: GitHub release artefact
+  with checksums, dedicated `deploy` user, root-owned update script with
+  tight sudoers, automated rollback to last-known-good. Already done: the
+  CI-gated staging deploy workflow (`deploy-staging.yml`), a forced-command deploy key
+  on the admin account, and the committed update script
+  (`infra/hetzner/scripts/server-update.sh`); see `infra/hetzner/DEPLOY.md`.
 - Server hardening leftovers: fail2ban (or equivalent), HSTS once stable,
   minimal monitoring (disk-usage threshold, external uptime check).
 - Real production at `oivus.fi` (or similar; domain not yet registered) —
