@@ -172,7 +172,11 @@ as are the companion behaviour plugins.
 - The API key is never stored in this repo. To activate the provider, go to
   Site administration → AI → AI providers, add a "Claude API Provider"
   instance, and paste an Anthropic API key. Set an explicit `max_tokens` per
-  action there; the plugin's default is the model maximum.
+  action there; the plugin's default is the model maximum. The key is stored
+  in the Moodle database only.
+- For a local testing environment, use a separate, spend-limited key, not the
+  production one. It lives in the local database, so it disappears with the
+  persistent root on a full from-scratch rebuild and must then be re-entered.
 - Survey and selection rationale: `notes/aiprovider-survey.md`.
 
 ## Question banks

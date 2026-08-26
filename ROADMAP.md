@@ -38,8 +38,8 @@ in `notes/`; to be started soon, not yet begun.
       Survey (`notes/aiprovider-survey.md`) found the contributed
       `aiprovider_claude` 1.0.4 usable; adopted, baked into the image like the
       STACK plugins, deployed to staging. It supports Moodle 5.0–5.2, so it
-      puts no pressure on the 5.2 migration. Remaining manual step: add the
-      Anthropic API key via the staging admin UI (Site administration → AI).
+      puts no pressure on the 5.2 migration. API key added and provider
+      enabled on staging via the admin UI 2026-08-26; fully done.
 - [ ] TASK-02 (`notes/TASK-02-aitext-drilling-extension.md`): essay-drilling
       extension on qtype_aitext — criterion-referenced structured feedback,
       scaffold-then-fade levels, honest grading progression, flag-for-teacher.

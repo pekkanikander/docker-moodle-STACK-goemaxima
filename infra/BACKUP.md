@@ -69,3 +69,8 @@ A restored backup taken after a compromise restores the attacker's changes
 too (accounts, tokens, content). Hardening/auditing of backups is a separate,
 planned topic; until then, after any suspected compromise prefer an older
 weekly dump and review users and web-service tokens after restoring.
+
+The dumps also contain the Anthropic API key (stored in the Moodle database
+by the AI provider config). If a dump may have leaked, rotate the key in the
+Anthropic Console; after a compromise-related restore, rotate it as a matter
+of course.

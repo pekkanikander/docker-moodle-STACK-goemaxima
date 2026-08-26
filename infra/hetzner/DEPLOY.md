@@ -134,7 +134,21 @@ docker compose --env-file .env.versions --env-file .env exec -T moodle \
 
 Accounts are created manually in the admin UI (*Site administration → Users*).
 
-## 8. Verify end-to-end
+## 8. Enable the AI provider (Anthropic Claude)
+
+In the admin UI (*Site administration → AI → AI providers*), add a
+"Claude API Provider" instance, paste the Anthropic API key, set an explicit
+`max_tokens` per action, and enable the provider. Use a dedicated production
+key (own Anthropic Console workspace, spend limit set), not the key used in
+local testing environments.
+
+The key is stored in the Moodle database only — never in the repo or `.env`.
+It survives updates and container rebuilds, and it is contained in the
+database dumps (see `infra/BACKUP.md`); treat those accordingly.
+
+Done on oivus.pnr.iki.fi 2026-08-26.
+
+## 9. Verify end-to-end
 
 - https://oivus.pnr.iki.fi loads the login page with a valid certificate.
 - Log in as admin; *Site administration → Plugins → Question types → STACK*
