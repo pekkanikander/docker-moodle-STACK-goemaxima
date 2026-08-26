@@ -53,4 +53,11 @@ milestone 1; pins in `versions.yml` (commit-SHA archives until upstream tags).
 2. ~~Fork + companion skeleton on GitHub~~ (done:
    `pekkanikander/moodle-qtype_aitext` branch `drilling`,
    `pekkanikander/moodle-local_aitextflags`; sibling working copies).
-3. Feature 1 → 3 → 4 → 2, with 5 alongside renderer work.
+3. Feature 1 → 3 → 4 → 2, with 5 alongside renderer work. Rubric design
+   detailed in `aitext-rubric-design.md` (review gate for Feature 1).
+
+Dev loop (decided 2026-08-26): bind-mount the fork working copy into the
+local container for the inner loop; repoint `versions.yml` pins to fork
+commit SHAs only at commit boundaries. Fork and companion are pushed to
+GitHub, but further pushes wait until the full AI skeleton passes a local
+fixture test.
