@@ -43,7 +43,11 @@ in `notes/`; to be started soon, not yet begun.
 - [ ] TASK-02 (`notes/TASK-02-aitext-drilling-extension.md`): essay-drilling
       extension on qtype_aitext — criterion-referenced structured feedback,
       scaffold-then-fade levels, honest grading progression, flag-for-teacher.
-      Starts with an architecture note, presented for review before any code.
+      Milestone 1 done 2026-08-26: vanilla qtype_aitext 2.1.0 (+ its two
+      behaviour adapter plugins) baked into the image, pinned by commit SHA
+      (2.1.0 untagged upstream); architecture note in
+      `notes/aitext-extension-architecture.md`, awaiting review before
+      extension code.
 
 ## M6 — Operational trust
 
