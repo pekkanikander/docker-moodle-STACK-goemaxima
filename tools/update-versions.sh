@@ -59,6 +59,8 @@ allow_empty "MOODLE_STACK_BEHAVIOUR_ADAPTIVEMULTIPART_SHA256" '.stack_behaviour_
 require_value "MOODLE_STACK_QBANK_IMPORTASVERSION_URL" '.stack_qbank_plugin_urls.qbank_importasversion'
 allow_empty "MOODLE_STACK_QBANK_IMPORTASVERSION_SHA256" '.stack_qbank_plugin_sha256.qbank_importasversion'
 require_value "STACK_MAXIMA_VERSION" '.stack_maxima_version'
+require_value "MOODLE_AIPROVIDER_CLAUDE_URL" '.aiprovider_claude_url'
+require_value "MOODLE_AIPROVIDER_CLAUDE_SHA256" '.aiprovider_claude_sha256'
 require_value "QBANK_TOOLS_BASE_IMAGE" '.qbank_tools_base_image'
 require_value "QBANK_TOOLS_PYYAML_VERSION" '.qbank_tools_pyyaml_version'
 

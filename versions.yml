@@ -50,6 +50,13 @@ stack_deps_versions: {}
 # plugin expects. Authored questions record it in their <stackversion>.
 stack_maxima_version: "2026062900"
 
+# Anthropic Claude provider for the Moodle core AI subsystem, pinned to a
+# GitHub tag archive like the STACK plugins. The API key is configured at
+# runtime through the Moodle admin UI, never in this repo.
+aiprovider_claude_tag: "1.0.4"
+aiprovider_claude_url: "https://github.com/ashishptl21/moodle-aiprovider_claude/archive/refs/tags/1.0.4.zip"
+aiprovider_claude_sha256: "01da5cd37cdc36a3e53d8e0f8abda0446ed0da85ea2e551bdd8a555ff6ca667a"
+
 # Image used to compile question sources into Moodle XML; see qbank/.
 qbank_tools_base_image: "python:3.13-slim"
 qbank_tools_pyyaml_version: "6.0.2"

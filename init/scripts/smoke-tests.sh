@@ -11,7 +11,7 @@ if ! curl -fsS "http://localhost:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null
   exit 1
 fi
 
-echo "Checking STACK plugin registration..."
+echo "Checking STACK and AI provider plugin registration..."
 dc exec -T moodle php -r '
 define("CLI_SCRIPT", true);
 require "/var/www/html/config.php";
@@ -30,6 +30,12 @@ foreach (["dfexplicitvaildate", "dfcbmexplicitvaildate", "adaptivemultipart"] as
 $qbank = core_component::get_plugin_list("qbank");
 if (!isset($qbank["importasversion"])) {
   $errors[] = "qbank_importasversion not registered. Found qbank plugins: " . implode(", ", array_keys($qbank));
+}
+$ai = core_component::get_plugin_list("aiprovider");
+if (!isset($ai["claude"])) {
+  $errors[] = "aiprovider_claude not registered. Found aiproviders: " . implode(", ", array_keys($ai));
+} else if (!get_config("aiprovider_claude", "version")) {
+  $errors[] = "aiprovider_claude files present but not installed in the DB; run admin/cli/upgrade.php";
 }
 if ($errors) {
   fwrite(STDERR, implode("\n", $errors) . "\n");

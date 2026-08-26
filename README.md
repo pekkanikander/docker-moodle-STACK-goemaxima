@@ -163,6 +163,18 @@ as are the companion behaviour plugins.
 - To automate STACK settings, run `./init/scripts/stack-init.sh`
   after filling the `MOODLE_STACK_MAXIMA*` and `MOODLE_STACK_PLATFORM` values in `.env`.
 
+## AI provider (Anthropic Claude)
+
+- The `aiprovider_claude` plugin is baked into the Moodle image from a pinned
+  GitHub tag archive (see `versions.yml`), like the STACK plugins. It backs the
+  Moodle core AI subsystem with the Anthropic Messages API
+  (actions: generate text, summarise text, explain text).
+- The API key is never stored in this repo. To activate the provider, go to
+  Site administration → AI → AI providers, add a "Claude API Provider"
+  instance, and paste an Anthropic API key. Set an explicit `max_tokens` per
+  action there; the plugin's default is the model maximum.
+- Survey and selection rationale: `notes/aiprovider-survey.md`.
+
 ## Question banks
 
 Questions are authored as YAML in a separate content directory, compiled to Moodle
