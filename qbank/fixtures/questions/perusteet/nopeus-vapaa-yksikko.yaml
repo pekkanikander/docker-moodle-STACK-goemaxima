@@ -6,11 +6,11 @@ tags: [fixture, yksikot]
 seeds: [211, 212, 213]
 
 variables: |
-  sx : rand([18, 36, 54]);
-  t  : 2;
+  sx   : rand([18, 36, 54]);
+  aika : 2;
 
 stem: |
-  Pyöräilijä etenee {@sx@} km ajassa {@t@} h.
+  Pyöräilijä etenee {@sx@} km ajassa {@aika@} h.
 
 # strict: false, so any compatible unit earns full marks; the prompt
 # accordingly leaves the choice of unit to the student.
@@ -18,8 +18,8 @@ answer:
   type: units
   strict: false
   prompt: "Laske pyöräilijän keskinopeus. Saat valita yksikön itse."
-  formula: sx/t * km/h
+  formula: sx/aika * km/h
 
 feedback: |
   Keskinopeus on matka jaettuna ajalla:
-  \({@sx@}\,\mathrm{km} / {@t@}\,\mathrm{h} = {@sx/t@}\,\mathrm{km/h}\).
+  \({@sx@}\,\mathrm{km} / {@aika@}\,\mathrm{h} = {@sx/aika@}\,\mathrm{km/h}\).
