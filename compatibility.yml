@@ -30,6 +30,15 @@ tuples:
       version: "1.0.4"
       source: "github-tag"
       # version.php: requires Moodle 5.0 (2025041400), supported [500, 502].
+    aitext:
+      plugin: "qtype_aitext"
+      version: "2.1.0"
+      source: "github-commit"
+      # version.php: requires Moodle 4.5 (2024100700), supported [405, 502].
+      # 2.1.0 is untagged upstream as of 2026-08-26; pinned by commit SHA.
+      companion_plugins:
+        - "qbehaviour_deferred_for_aitext"
+        - "qbehaviour_immediate_for_aitext"
 
 notes:
   - "Moodle code tree read-only is a goal; validate before enforcing."

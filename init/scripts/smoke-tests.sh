@@ -11,7 +11,7 @@ if ! curl -fsS "http://localhost:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null
   exit 1
 fi
 
-echo "Checking STACK and AI provider plugin registration..."
+echo "Checking STACK, aitext and AI provider plugin registration..."
 dc exec -T moodle php -r '
 define("CLI_SCRIPT", true);
 require "/var/www/html/config.php";
@@ -22,10 +22,15 @@ if (!isset($qt["stack"])) {
   $errors[] = "qtype_stack not registered. Found qtypes: " . implode(", ", array_keys($qt));
 }
 $qb = core_component::get_plugin_list("qbehaviour");
-foreach (["dfexplicitvaildate", "dfcbmexplicitvaildate", "adaptivemultipart"] as $p) {
+foreach (["dfexplicitvaildate", "dfcbmexplicitvaildate", "adaptivemultipart", "deferred_for_aitext", "immediate_for_aitext"] as $p) {
   if (!isset($qb[$p])) {
     $errors[] = "qbehaviour_" . $p . " not registered. Found behaviours: " . implode(", ", array_keys($qb));
   }
+}
+if (!isset($qt["aitext"])) {
+  $errors[] = "qtype_aitext not registered. Found qtypes: " . implode(", ", array_keys($qt));
+} else if (!get_config("qtype_aitext", "version")) {
+  $errors[] = "qtype_aitext files present but not installed in the DB; run admin/cli/upgrade.php";
 }
 $qbank = core_component::get_plugin_list("qbank");
 if (!isset($qbank["importasversion"])) {
