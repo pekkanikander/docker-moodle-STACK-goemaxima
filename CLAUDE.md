@@ -32,6 +32,10 @@ The setup serves exam drilling and question-interpretation training for a homesc
   `fixtures/` (test content), and `README.md` for the source format.
 - `tools/qbank.sh` as the entry point; `docker/qbank-tools/` builds the compiler
   image. Question content lives in a separate repo, found via `QBANK_CONTENT_DIR`.
+- Sibling repos, checked out next to this one: `oivus-questions` (question
+  content), `moodle-qtype_aitext` (our fork, branch `drilling`) and
+  `moodle-local_aitextflags` (companion plugin), the latter two for the TASK-02
+  essay-drilling extension.
 - `.github/workflows/ci.yml` for end-to-end CI.
 - `README.md` for quickstart and update policy.
 - `ROADMAP.md` for milestones and current priorities.

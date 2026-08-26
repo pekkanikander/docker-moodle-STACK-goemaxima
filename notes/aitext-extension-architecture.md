@@ -50,5 +50,7 @@ milestone 1; pins in `versions.yml` (commit-SHA archives until upstream tags).
 
 1. ~~Bake vanilla plugin into image, verify against `aiprovider_claude`~~
    (milestone 1, done).
-2. Fork + companion skeleton on GitHub.
+2. ~~Fork + companion skeleton on GitHub~~ (done:
+   `pekkanikander/moodle-qtype_aitext` branch `drilling`,
+   `pekkanikander/moodle-local_aitextflags`; sibling working copies).
 3. Feature 1 → 3 → 4 → 2, with 5 alongside renderer work.

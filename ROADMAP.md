@@ -47,7 +47,10 @@ in `notes/`; to be started soon, not yet begun.
       behaviour adapter plugins) baked into the image, pinned by commit SHA
       (2.1.0 untagged upstream); architecture note in
       `notes/aitext-extension-architecture.md`, awaiting review before
-      extension code.
+      extension code. Fork (`pekkanikander/moodle-qtype_aitext`, branch
+      `drilling` from the pinned commit) and companion-plugin skeleton
+      (`pekkanikander/moodle-local_aitextflags`) created 2026-08-26 as
+      sibling repos.
 
 ## M6 — Operational trust
 
@@ -92,6 +95,8 @@ content-creation phase, so this fits in the next few weeks):
 
 - `oivus-questions` (sibling repo) — question content; its `NOW.md` tracks
   content work.
+- `moodle-qtype_aitext` and `moodle-local_aitextflags` (sibling repos) — the
+  TASK-02 fork and its companion plugin.
 - `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
 - `infra/BACKUP.md` — backup/restore architecture and runbooks.
 - `notes/` — task briefs for upcoming work (TASK-01, TASK-02).
