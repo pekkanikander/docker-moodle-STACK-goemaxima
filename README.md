@@ -286,7 +286,7 @@ so CI and local runs don't reuse stale DB data with new secrets. For absolute pa
 `backups/` are kept).
 
 ## Hosting
-Production hosting (Hetzner VM, Caddy TLS, `oivus.pnr.iki.fi`) is documented in
+Hosted staging (Hetzner VM, Caddy TLS, `oivus.pnr.iki.fi`) is documented in
 `infra/hetzner/DEPLOY.md`.
 Backups and restore procedures are documented in `infra/BACKUP.md`.
 

@@ -34,7 +34,8 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - `README.md` for quickstart and update policy.
 - `ROADMAP.md` for milestones and current priorities.
 - `tools/act-ci.sh` for local CI via `act`.
-- `notes/` for research notes behind version and design decisions.
+- `notes/` for task briefs for upcoming work (rationale for settled decisions
+  lives as comments in `versions.yml` and the code, not here).
 - `infra/hetzner/` for VM provisioning (cloud-init, hcloud helper); runbook in `infra/hetzner/DEPLOY.md`.
 - `infra/BACKUP.md` for the backup/restore architecture; `infra/mbp/` holds the
   master copies deployed to `~/Sites/oivus.pnr.iki.fi` by `infra/mbp/deploy.sh`.

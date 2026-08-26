@@ -17,6 +17,11 @@ stack_plugin_tag: "v4.13.0"
 stack_plugin_url: "https://github.com/maths/moodle-qtype_stack/archive/refs/tags/v4.13.0.zip"
 stack_plugin_sha256: "1bb7cae1d1d91c704b929e8eff8bdddb1cae2acb42a87b619f1fa73bf4ba2708"
 stack_plugin_version: "4.13.0"
+# The behaviour plugins below are pinned at their 2022-09-22 releases, whose
+# plugins-directory metadata declares support only up to Moodle 4.5. That
+# metadata is informational; Moodle enforces each plugin's own version.php,
+# and STACK upstream is tested on current Moodle lines with exactly these
+# releases. Keep the pins until upstream tags newer ones.
 stack_behaviour_plugins:
   - "qbehaviour_dfexplicitvaildate"
   - "qbehaviour_dfcbmexplicitvaildate"
