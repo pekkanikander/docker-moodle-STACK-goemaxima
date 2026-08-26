@@ -70,6 +70,46 @@ QUIZ_BEHAVIOURS = (
     "interactive",
 )
 
+# Review options: what the student is shown while answering ('during') and
+# when looking at a submitted attempt ('after'). 'marks' covers both the
+# maximum and the earned mark. Moodle always shows the attempt itself during
+# it and never shows overall feedback during it, whatever is listed here.
+REVIEW_PARTS = (
+    "attempt",
+    "correctness",
+    "marks",
+    "specificfeedback",
+    "generalfeedback",
+    "rightanswer",
+    "overallfeedback",
+)
+REVIEW_DEFAULTS = {
+    "during": ["correctness", "marks", "specificfeedback"],
+    # No 'rightanswer': Moodle renders STACK teacher answers as raw Maxima
+    # ("(50*km)/h"), which only confuses. The model solution in the general
+    # feedback shows the correct answer properly typeset.
+    "after": ["attempt", "correctness", "marks", "specificfeedback",
+              "generalfeedback", "overallfeedback"],
+}
+
+# Symbols STACK treats as units in units questions, generated the way STACK
+# generates them (stack/cas/casstring.units.class.php): each prefix with each
+# prefixable unit, plus the non-prefixable names. A question variable with one
+# of these names shadows the unit in every expression of the question --
+# including the teacher's answer -- so it is refused outright.
+UNIT_PREFIXES = "y z a f p n u m c d da h k M G T P E Z Y".split()
+UNIT_PREFIXABLE = (
+    "m l L g t s h Hz Bq cd N Pa cal Cal Btu eV J W Wh A ohm Omega C V F S "
+    "Wb T H Gy rem Sv lx lm mol M kat rad sr K VA Ci"
+).split()
+UNIT_NONPREFIX = (
+    "min amu u mmHg bar ha cc gal mbar atm torr rev deg rpm au Da Np B dB "
+    "day year hp in ft yd mi lb dpt"
+).split()
+UNIT_NAMES = frozenset(UNIT_NONPREFIX).union(
+    prefix + unit for prefix in [""] + UNIT_PREFIXES for unit in UNIT_PREFIXABLE
+)
+
 
 class SourceError(Exception):
     """A problem in a source file, reported with its path."""
@@ -204,6 +244,14 @@ def load_question(path: Path, source: dict) -> Question:
         fail(path, "'answer.strict' only applies to answer type 'units'")
     if readings and "quantity" not in answer:
         fail(path, "'answer.quantity' must name the symbol the readings stand for")
+    if answer.get("type") == "units":
+        assigned = re.findall(
+            r"(?:^|;)\s*([A-Za-z][A-Za-z0-9_]*)\s*:", str(source.get("variables", "")), re.M
+        )
+        shadowed = [n for n in assigned + [str(answer.get("quantity", ""))] if n in UNIT_NAMES]
+        if shadowed:
+            fail(path, "variable(s) shadow STACK unit names in a units question: "
+                 + ", ".join(shadowed))
     if scaffold == "choice" and not interpretation.get("prompt"):
         fail(path, "scaffold 'choice' requires 'interpretation.prompt'")
     if scaffold == "stated" and not interpretation.get("stated_prefix"):
@@ -641,6 +689,18 @@ def load_quiz(path: Path, source: dict) -> dict:
     if behaviour not in QUIZ_BEHAVIOURS:
         fail(path, f"behaviour must be one of {', '.join(QUIZ_BEHAVIOURS)}")
 
+    review_source = source.get("review", {})
+    if not isinstance(review_source, dict) or set(review_source) - set(REVIEW_DEFAULTS):
+        fail(path, "review takes 'during' and 'after' only")
+    review = {}
+    for phase, default in REVIEW_DEFAULTS.items():
+        parts = review_source.get(phase, default)
+        if parts == "all":
+            parts = list(REVIEW_PARTS)
+        if not isinstance(parts, list) or any(p not in REVIEW_PARTS for p in parts):
+            fail(path, f"review {phase} must be 'all' or a list from: {', '.join(REVIEW_PARTS)}")
+        review[phase] = parts
+
     quiz = {
         "id": str(require(path, source, "id")),
         "name": str(require(path, source, "name")),
@@ -649,6 +709,7 @@ def load_quiz(path: Path, source: dict) -> dict:
         "questionsperpage": int(source.get("questionsperpage", 1)),
         "attempts": int(source.get("attempts", 0)),
         "grademethod": source.get("grademethod", "highest"),
+        "review": review,
         "questions": [],
     }
     for entry in require(path, source, "questions"):

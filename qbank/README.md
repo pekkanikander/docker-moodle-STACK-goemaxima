@@ -209,6 +209,10 @@ behaviour: adaptive             # see below
 questionsperpage: 1
 attempts: 0                     # 0 = unlimited
 grademethod: highest            # highest | average
+review:                         # see below; the values shown are the defaults
+  during: [correctness, marks, specificfeedback]
+  after: [attempt, correctness, marks, specificfeedback,
+          generalfeedback, overallfeedback]
 
 questions:
   - id: motion-average-speed-01
@@ -220,6 +224,19 @@ questions:
 own as the student presses *Check* — which is what the interpretation scaffold
 needs. (STACK swaps in its `adaptivemultipart` behaviour internally; that name
 cannot be given here, as Moodle only accepts archetypal behaviours.)
+
+`review:` says what the student is shown: `during` while answering, `after`
+when looking at a submitted attempt. Each takes `all` or a list drawn from
+`attempt`, `correctness`, `marks`, `specificfeedback`, `generalfeedback`,
+`rightanswer`, `overallfeedback` (`marks` covers both the maximum and the
+earned mark). The defaults make *Check* visibly grade the answer and explain
+the reading it came from, while the model solution stays hidden until the
+attempt is submitted. `rightanswer` is off by default even after submission:
+Moodle renders a STACK teacher answer as raw Maxima (`(50*km)/h`), which only
+confuses — the model solution in the general feedback presents the correct
+answer properly typeset. `during: []` together with
+`behaviour: deferredfeedback` gives a real-exam rehearsal in which nothing is
+revealed until the attempt is handed in.
 
 Rebuilding a quiz replaces its question list. If the quiz already has attempts,
 the list is left alone and only its settings are updated.

@@ -65,7 +65,22 @@ $cmid = $DB->get_field('course_modules', 'id', [
     'idnumber' => $spec['id'],
 ]);
 
-$moduleinfo = (object) array_merge((array) get_config('quiz'), [
+// The review* bitmasks cannot be given directly: quiz_process_options()
+// rebuilds them from these form-checkbox fields, and any field left unset
+// turns that option off. 'marks' in the spec covers both Moodle fields.
+$review = [];
+foreach ($spec['review'] as $phase => $parts) {
+    $times = $phase === 'during' ? ['during'] : ['immediately', 'open', 'closed'];
+    foreach ($parts as $part) {
+        foreach ($part === 'marks' ? ['maxmarks', 'marks'] : [$part] as $field) {
+            foreach ($times as $time) {
+                $review[$field . $time] = 1;
+            }
+        }
+    }
+}
+
+$moduleinfo = (object) array_merge((array) get_config('quiz'), $review, [
     'modulename' => 'quiz',
     'module' => $module->id,
     'course' => $course->id,
