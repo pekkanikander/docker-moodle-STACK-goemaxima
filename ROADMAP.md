@@ -34,11 +34,12 @@ Extend beyond STACK's numeric/CAS grading to formative essay drilling, using
 the Moodle core AI subsystem as the provider-agnostic abstraction. Task briefs
 in `notes/`; to be started soon, not yet begun.
 
-- [ ] TASK-01 (`notes/TASK-01-anthropic-aiprovider.md`): survey existing
-      Anthropic/Claude `aiprovider` options for our Moodle version (including
-      the 5.2-core Bedrock route); plan a native provider only if the survey
-      finds nothing usable. The survey's 5.1-vs-5.2 findings also decide
-      whether the Moodle 5.2 migration is pulled forward.
+- [x] TASK-01 (`notes/TASK-01-anthropic-aiprovider.md`): done 2026-08-26.
+      Survey (`notes/aiprovider-survey.md`) found the contributed
+      `aiprovider_claude` 1.0.4 usable; adopted, baked into the image like the
+      STACK plugins, deployed to staging. It supports Moodle 5.0–5.2, so it
+      puts no pressure on the 5.2 migration. Remaining manual step: add the
+      Anthropic API key via the staging admin UI (Site administration → AI).
 - [ ] TASK-02 (`notes/TASK-02-aitext-drilling-extension.md`): essay-drilling
       extension on qtype_aitext — criterion-referenced structured feedback,
       scaffold-then-fade levels, honest grading progression, flag-for-teacher.
@@ -74,7 +75,8 @@ content-creation phase, so this fits in the next few weeks):
   `oivus.pnr.iki.fi` is the staging environment. Before production go-live:
   set `display_errors=0` in the Moodle image (deliberately 1 for now, to
   surface errors while staging).
-- Moodle 5.2 line migration (go/no-go informed by the M5 survey).
+- Moodle 5.2 line migration (no pressure from the AI side: the adopted
+  provider supports 5.0–5.2).
 - Renovate (or similar) update PRs, grouped and CI-gated.
 
 ## Version watch

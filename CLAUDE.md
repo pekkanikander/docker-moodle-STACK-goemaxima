@@ -10,6 +10,7 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - Prefer pinned tags (optionally digests); avoid `latest`.
 - Keep `docker compose up -d` reproducible.
 - No secrets in the repo; use `.env.example` and GitHub Actions secrets.
+  The Anthropic API key is set only via the Moodle admin UI, never in code or env.
 - Fail fast; do not mask errors in scripts or CI.
 - Build a custom Moodle image from a pinned PHP base + Moodle release tarball checksum.
 - Keep the Moodle code tree read-only at runtime as a goal until validated.
@@ -24,7 +25,8 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - `init/scripts/*.sh` for bootstrap, install, config, and smoke tests.
 - `tools/start.sh` for one-shot local setup/start; `Setup Moodle.app` (built
   from `tools/launcher/setup-moodle.applescript`) is its double-click launcher.
-- `docker/moodle/Dockerfile` for the custom Moodle build (Moodle + STACK).
+- `docker/moodle/Dockerfile` for the custom Moodle build (Moodle + STACK +
+  `aiprovider_claude`, all pinned in `versions.yml`).
 - `qbank/` for the question-bank machinery: `compiler/` (YAML → Moodle XML),
   `cli/` (import and quiz build, run inside the `moodle` container),
   `fixtures/` (test content), and `README.md` for the source format.
