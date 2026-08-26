@@ -28,5 +28,11 @@ $dc up -d
 $dc exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php --non-interactive
 
 echo "Running smoke tests..."
-MOODLE_HTTP_PORT=8000 ./init/scripts/smoke-tests.sh
+./init/scripts/smoke-tests.sh
+
+# The smoke tests exercise the container's published port; a broken
+# Caddy/TLS front is invisible to them. Check the public URL too.
+site_url=$(sed -n 's/^MOODLE_SITE_URL=//p' .env)
+curl -fsS "$site_url/login/index.php" > /dev/null
+echo "External check OK: $site_url"
 echo "Update complete: now at $(git rev-parse HEAD)"
