@@ -196,6 +196,65 @@ visible in the score itself, not only in the feedback.
 The answer is not graded until a reading has been selected —
 the student must commit to a reading first.
 
+## AI-graded explanation questions (aitext)
+
+A file with `type: aitext` is an explanation question graded by an LLM
+against a criterion rubric, not by Maxima. The design and its rationale are
+in `notes/aitext-rubric-design.md`; the grading pipeline (a fork of
+`qtype_aitext`) is under construction. **Until it lands, the compiler
+validates these sources and skips them** — no XML is emitted and quizzes
+may not reference them yet — so content can be written and reviewed now
+against the same rules the extension will enforce.
+
+```yaml
+id: selitys-kelluminen-01
+type: aitext
+name: "Kelluminen ja tiheys"
+category: [Fysiikka, Selitys]
+language: fi                  # language of the student-facing feedback
+
+stem: |
+  The question shown to the student.
+
+context: |                    # optional; grader-model context, never shown
+  Peruskoulun fysiikan selitystehtävä. Älä vaadi kaavoja.
+
+sampleanswer: |               # a model answer, given to the grader
+
+rubric:
+  criteria:                   # 2-5 criteria
+    - id: noste               # stable slug; the JSON round-trip key
+      title: "Noste"          # shown to the student
+      levels:                 # 2-5 descriptors; index = points earned
+        - "Nostetta ei mainita, tai se kuvataan väärin."
+        - "Noste mainitaan, mutta sen rooli jää epäselväksi."
+        - "Vastaus selittää, että kappale kelluu, kun noste kannattelee
+           sen painon."
+
+tests:                        # golden sample answers, see below
+  - name: taysi-vastaus
+    answer: |
+      ...
+    expect:
+      noste: 2                # or a list of acceptable levels: [1, 2]
+
+feedback: |
+  Worked explanation, shown after the attempt.
+```
+
+The mark is Σlevel/Σmax, computed in PHP — the criterion levels are the
+only thing the model decides. Three levels is the intended default
+(absent / partial / met); two make a strict met-or-not criterion.
+Descriptors must be observable ("mainitsee X"), not mental-state
+("ymmärtää X").
+
+`tests:` are the aitext analogue of STACK question tests: each sample
+answer is run through the real grading pipeline and the criterion levels
+the model chose are compared against `expect:`. Because a live model call
+is involved, evaluation costs API money and is not perfectly
+deterministic: use a list of acceptable levels for genuinely borderline
+answers, and keep single expected values for the clear-cut ones.
+
 ## Quiz source format
 
 A file containing a `questions:` key is a quiz spec rather than a question.

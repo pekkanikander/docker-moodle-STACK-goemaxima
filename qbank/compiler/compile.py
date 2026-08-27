@@ -53,6 +53,13 @@ UNIT_FALLBACK_TESTINPUT = "1000*ta*ms/s"
 # rung, so a misreading is always named rather than just marked wrong.
 SCAFFOLDS = ("stated", "choice", "none")
 
+# AI-graded explanation questions (type: aitext). Bounds per
+# notes/aitext-rubric-design.md: few small judgements grade reliably, one
+# big one does not. Three levels is the intended default; two is a strict
+# met/not-met criterion.
+AITEXT_CRITERIA_RANGE = (2, 5)
+AITEXT_LEVELS_RANGE = (2, 5)
+
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 # A reading key becomes part of a Maxima variable name (ta_<key>).
@@ -275,6 +282,72 @@ def load_question(path: Path, source: dict) -> Question:
         grade=float(source.get("grade", 1.0)),
         penalty=float(source.get("penalty", 0.1)),
     )
+
+
+def load_aitext_question(path: Path, source: dict) -> str:
+    """Validate an aitext drilling question and return its id.
+
+    These compile to qtype_aitext XML once the drilling extension lands
+    (fork of qtype_aitext, see notes/aitext-rubric-design.md). Until then
+    sources are validated and skipped, so fixtures and content can be
+    written and reviewed against the same rules the extension will enforce.
+    """
+    qid = str(require(path, source, "id"))
+    if not ID_RE.match(qid):
+        fail(path, f"id '{qid}' must be lowercase kebab-case")
+    require(path, source, "name")
+    require(path, source, "stem")
+    require(path, source, "language")
+    category = require(path, source, "category")
+    if not isinstance(category, list) or not category:
+        fail(path, "'category' must be a non-empty list of category names")
+
+    rubric = require(path, source, "rubric")
+    criteria = rubric.get("criteria") if isinstance(rubric, dict) else None
+    lo, hi = AITEXT_CRITERIA_RANGE
+    if not isinstance(criteria, list) or not lo <= len(criteria) <= hi:
+        fail(path, f"'rubric.criteria' must be a list of {lo}-{hi} criteria")
+
+    # Criterion id -> its highest level index (= its points).
+    ranges: dict[str, int] = {}
+    for criterion in criteria:
+        cid = str(criterion.get("id", ""))
+        if not ID_RE.match(cid):
+            fail(path, f"criterion id '{cid}' must be lowercase kebab-case")
+        if cid in ranges:
+            fail(path, f"duplicate criterion id '{cid}'")
+        if not criterion.get("title"):
+            fail(path, f"criterion '{cid}' needs a 'title'")
+        levels = criterion.get("levels")
+        lo_l, hi_l = AITEXT_LEVELS_RANGE
+        if not isinstance(levels, list) or not lo_l <= len(levels) <= hi_l:
+            fail(path, f"criterion '{cid}' needs {lo_l}-{hi_l} level descriptors")
+        if not all(isinstance(level, str) and level.strip() for level in levels):
+            fail(path, f"criterion '{cid}' has an empty level descriptor")
+        ranges[cid] = len(levels) - 1
+
+    names: set[str] = set()
+    for test in source.get("tests", []):
+        tname = str(test.get("name", ""))
+        if not tname:
+            fail(path, "every test needs a 'name'")
+        if tname in names:
+            fail(path, f"duplicate test name '{tname}'")
+        names.add(tname)
+        if not str(test.get("answer", "")).strip():
+            fail(path, f"test '{tname}' needs an 'answer'")
+        expect = test.get("expect")
+        if not isinstance(expect, dict) or set(expect) != set(ranges):
+            fail(path, f"test '{tname}': 'expect' must cover exactly the "
+                 f"criterion ids: {', '.join(ranges)}")
+        for cid, expected in expect.items():
+            values = expected if isinstance(expected, list) else [expected]
+            if not values or any(
+                not isinstance(v, int) or not 0 <= v <= ranges[cid] for v in values
+            ):
+                fail(path, f"test '{tname}': expected level for '{cid}' must be "
+                     f"an integer 0-{ranges[cid]} or a list of them")
+    return qid
 
 
 def strict_units(question: Question) -> bool:
@@ -722,6 +795,7 @@ def load_quiz(path: Path, source: dict) -> dict:
 def compile_tree(source: Path, out: Path, stackversion: str) -> int:
     questions: dict[str, Question] = {}
     quizzes: list[dict] = []
+    aitext: dict[str, Path] = {}
 
     for path in sorted(source.rglob("*.yaml")):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -730,9 +804,18 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
         if "questions" in data:
             quizzes.append(load_quiz(path, data))
             continue
+        qtype = data.get("type", "stack")
+        if qtype == "aitext":
+            qid = load_aitext_question(path, data)
+            if qid in questions or qid in aitext:
+                fail(path, f"id '{qid}' already used")
+            aitext[qid] = path
+            continue
+        if qtype != "stack":
+            fail(path, f"unknown question type '{qtype}'")
         question = load_question(path, data)
-        if question.id in questions:
-            fail(path, f"id '{question.id}' already used by {questions[question.id].path}")
+        if question.id in questions or question.id in aitext:
+            fail(path, f"id '{question.id}' already in use")
         questions[question.id] = question
 
     for quiz in quizzes:
@@ -759,6 +842,9 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
             )
 
     print(f"compiled {len(questions)} questions, {len(quizzes)} quizzes into {out}")
+    if aitext:
+        print(f"validated {len(aitext)} aitext questions, "
+              "NOT compiled: the drilling extension is pending")
     return 0
 
 

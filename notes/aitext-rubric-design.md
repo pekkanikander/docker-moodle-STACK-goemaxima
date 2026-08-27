@@ -193,13 +193,17 @@ of the descriptors; template labels come from lang strings (fi + en).
   *calibration*: evidence quotes, uncertainty markers and the flag button
   all frame the AI's judgement as evidence to weigh, not verdict to accept.
 
-## Open questions for review
+## Decisions (review 2026-08-27)
 
-1. Three levels (0–2) as the default — agreed?
-2. Model free-text comments on from the start, or begin with descriptors +
-   evidence only and add comments once the pipeline is trusted?
-3. `double_run` disagreement → conservative lower level for the recorded
-   mark — or display-only, mark from the first run?
-4. Drop `fuzz` in favour of real `double_run` disagreement?
-5. Student-facing language: fixed Finnish, or follow the question's
-   language field?
+1. Three levels as the default, with proper support for strict two-level
+   (met / not met) criteria.
+2. Model free-text comments from the start — they are a main point of the
+   exercise. Additionally, fully free-form feedback *alongside* the graded
+   rubric is to be trialled later; expect prompt-engineering work.
+3. & 4. `double_run` and `fuzz` are both experiments; whether either is
+   really included is decided later, on evidence.
+5. Student-facing language follows the question's `language` field.
+
+Fixture: `qbank/fixtures/questions/selitys/kelluminen.yaml` (source format
+in `qbank/README.md`); the compiler validates aitext sources now and
+compiles them once the extension lands.

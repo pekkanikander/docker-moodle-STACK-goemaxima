@@ -1,0 +1,120 @@
+# AI-graded explanation question (qtype_aitext + rubric); the format is
+# described in qbank/README.md, the design in notes/aitext-rubric-design.md.
+# Exercises: 3-level criteria, a strict 2-level criterion, borderline
+# expectations as lists, and a nonsense-answer pipeline check.
+id: fixture-selitys-kelluminen
+type: aitext
+name: "Fixture: kelluminen ja tiheys (selitys)"
+category: [Testi, Selitys]
+tags: [fixture, selitys, aitext]
+language: fi
+
+stem: |
+  Puinen kappale kelluu vedessä, mutta samankokoinen teräskappale uppoaa.
+
+  Selitä omin sanoin, miksi näin käy. Käytä selityksessäsi käsitteitä
+  <em>tiheys</em> ja <em>noste</em>.
+
+# Question-specific context handed to the grader model, on top of the
+# rubric and the fixed instructions the plugin builds. Not shown to the
+# student.
+context: |
+  Peruskoulun fysiikan selitystehtävä (aihe: tiheys ja noste). Vastaaja on
+  yhdeksäsluokkalainen. Arvioi vain kriteerien perusteella; älä vaadi
+  kaavoja tai lukuarvoja.
+
+sampleanswer: |
+  Puu kelluu, koska puun tiheys on pienempi kuin veden tiheys. Silloin
+  veden noste on yhtä suuri kuin puukappaleen paino jo ennen kuin kappale
+  on kokonaan veden alla, joten kappale jää pinnalle. Teräksen tiheys on
+  suurempi kuin veden tiheys, joten teräskappaleen paino on suurempi kuin
+  noste, ja kappale uppoaa.
+
+rubric:
+  criteria:
+    - id: tiheysvertailu
+      title: "Tiheyksien vertailu"
+      levels:
+        - "Vastaus ei vertaa kappaleiden tiheyttä veden tiheyteen."
+        - "Tiheys mainitaan, mutta vertailu veden tiheyteen puuttuu, jää
+           epäselväksi tai on korvattu painolla tai keveydellä."
+        - "Vastaus toteaa, että puun tiheys on pienempi ja teräksen tiheys
+           suurempi kuin veden tiheys."
+    - id: noste
+      title: "Noste"
+      levels:
+        - "Nostetta ei mainita, tai se kuvataan väärin."
+        - "Noste mainitaan, mutta sen yhteys kellumiseen tai uppoamiseen
+           jää epäselväksi."
+        - "Vastaus selittää, että kappale kelluu, kun noste kannattelee
+           sen painon, ja uppoaa, kun paino on nostetta suurempi."
+    - id: molemmat-tapaukset
+      title: "Molemmat tapaukset"
+      levels:
+        - "Vastaus käsittelee vain toista kappaletta tai ei kumpaakaan."
+        - "Vastaus käsittelee sekä puun kellumisen että teräksen
+           uppoamisen."
+
+# Golden sample answers: the evaluation harness runs each through the real
+# grading pipeline and compares the criterion levels. A list means any of
+# the listed levels is acceptable (genuinely borderline answers).
+# 'why' is a note for the reviewer, not sent to the model.
+tests:
+  - name: taysi-vastaus
+    answer: |
+      Puu kelluu, koska puun tiheys on pienempi kuin veden tiheys. Veden
+      noste kannattelee puukappaleen painon, joten se jää pinnalle.
+      Teräksen tiheys taas on suurempi kuin veden, joten noste ei riitä
+      kannattelemaan kappaleen painoa ja se uppoaa.
+    expect:
+      tiheysvertailu: 2
+      noste: 2
+      molemmat-tapaukset: 1
+
+  - name: paino-eika-tiheys
+    why: "Sekoittaa painon ja tiheyden; nostetta ei mainita lainkaan."
+    answer: |
+      Puu on kevyempää kuin vesi, joten se jää kellumaan. Teräs on paljon
+      painavampaa kuin vesi, joten se painuu pohjaan.
+    expect:
+      tiheysvertailu: [0, 1]
+      noste: 0
+      molemmat-tapaukset: 1
+
+  - name: vain-puu
+    why: "Fysiikka oikein, mutta vain toinen tapaus käsitelty."
+    answer: |
+      Puukappale kelluu, koska puun tiheys on pienempi kuin veden tiheys.
+      Silloin noste on yhtä suuri kuin kappaleen paino ja kappale pysyy
+      pinnalla.
+    expect:
+      tiheysvertailu: 1
+      noste: [1, 2]
+      molemmat-tapaukset: 0
+
+  - name: rakenne-ilman-fysiikkaa
+    why: "Molemmat tapaukset mainitaan, mutta pyydettyjä käsitteitä ei
+          käytetä: rakenne oikein, fysiikka puuttuu."
+    answer: |
+      Teräs on painava, joten se uppoaa. Puu on kevyt, joten se kelluu.
+    expect:
+      tiheysvertailu: 0
+      noste: 0
+      molemmat-tapaukset: 1
+
+  - name: tyhjanpaivainen
+    why: "Putken tarkistus: asiaton vastaus saa kaikista alimmat tasot."
+    answer: |
+      En tiedä. Ehkä se johtuu vedestä.
+    expect:
+      tiheysvertailu: 0
+      noste: 0
+      molemmat-tapaukset: 0
+
+feedback: |
+  Kappale kelluu, jos sen tiheys on pienempi kuin veden tiheys: silloin
+  noste kannattelee kappaleen painon jo ennen kuin kappale on kokonaan
+  veden alla. Puun tiheys on pienempi ja teräksen suurempi kuin veden
+  tiheys, joten samankokoisista kappaleista puinen kelluu ja teräksinen
+  uppoaa. Koko ei asiaa ratkaise — laivakin on terästä, mutta sen muoto
+  tekee keskimääräisestä tiheydestä pienen.
