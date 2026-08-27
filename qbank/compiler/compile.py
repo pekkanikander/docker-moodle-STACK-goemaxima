@@ -60,6 +60,11 @@ SCAFFOLDS = ("stated", "choice", "none")
 AITEXT_CRITERIA_RANGE = (2, 5)
 AITEXT_LEVELS_RANGE = (2, 5)
 
+# How much of the grading the student is shown (Feature 3, purely
+# presentational): no numbers at all, a three-way badge per criterion, or
+# points per criterion plus the total.
+AITEXT_GRADINGS = ("none", "coarse", "fine")
+
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 # A reading key becomes part of a Maxima variable name (ta_<key>).
@@ -284,13 +289,14 @@ def load_question(path: Path, source: dict) -> Question:
     )
 
 
-def load_aitext_question(path: Path, source: dict) -> str:
-    """Validate an aitext drilling question and return its id.
+def load_aitext_question(path: Path, source: dict) -> dict:
+    """Validate an aitext drilling question and return its eval spec.
 
-    These compile to qtype_aitext XML once the drilling extension lands
-    (fork of qtype_aitext, see notes/aitext-rubric-design.md). Until then
-    sources are validated and skipped, so fixtures and content can be
-    written and reviewed against the same rules the extension will enforce.
+    The spec (JSON, written under <out>/aitext/) carries the question, the
+    rubric in the exact shape the qtype_aitext fork stores it, and the
+    golden tests for the evaluation harness (qbank/cli/aitext-test.php).
+    Import into Moodle is still pending; until it lands these compile to
+    eval specs only, and quizzes may not reference them.
     """
     qid = str(require(path, source, "id"))
     if not ID_RE.match(qid):
@@ -301,6 +307,9 @@ def load_aitext_question(path: Path, source: dict) -> str:
     category = require(path, source, "category")
     if not isinstance(category, list) or not category:
         fail(path, "'category' must be a non-empty list of category names")
+    grading = source.get("grading", "fine")
+    if grading not in AITEXT_GRADINGS:
+        fail(path, f"'grading' must be one of {', '.join(AITEXT_GRADINGS)}")
 
     rubric = require(path, source, "rubric")
     criteria = rubric.get("criteria") if isinstance(rubric, dict) else None
@@ -327,6 +336,7 @@ def load_aitext_question(path: Path, source: dict) -> str:
         ranges[cid] = len(levels) - 1
 
     names: set[str] = set()
+    tests: list[dict] = []
     for test in source.get("tests", []):
         tname = str(test.get("name", ""))
         if not tname:
@@ -340,6 +350,7 @@ def load_aitext_question(path: Path, source: dict) -> str:
         if not isinstance(expect, dict) or set(expect) != set(ranges):
             fail(path, f"test '{tname}': 'expect' must cover exactly the "
                  f"criterion ids: {', '.join(ranges)}")
+        normalised: dict[str, list[int]] = {}
         for cid, expected in expect.items():
             values = expected if isinstance(expected, list) else [expected]
             if not values or any(
@@ -347,7 +358,38 @@ def load_aitext_question(path: Path, source: dict) -> str:
             ):
                 fail(path, f"test '{tname}': expected level for '{cid}' must be "
                      f"an integer 0-{ranges[cid]} or a list of them")
-    return qid
+            normalised[cid] = values
+        tests.append({
+            "name": tname,
+            "answer": str(test["answer"]).strip(),
+            "expect": normalised,
+            "why": str(test.get("why", "")).strip(),
+        })
+
+    return {
+        "id": qid,
+        "name": str(source["name"]),
+        "category": [str(part) for part in category],
+        "tags": [str(tag) for tag in source.get("tags", [])],
+        "stem_html": to_html(str(source["stem"])),
+        "context": str(source.get("context", "")).strip(),
+        "feedback_html": to_html(str(source.get("feedback", ""))),
+        # The rubric column of the qtype_aitext fork, verbatim.
+        "rubric": {
+            "language": str(source["language"]),
+            "display": grading,
+            "sampleanswer": str(source.get("sampleanswer", "")).strip(),
+            "criteria": [
+                {
+                    "id": str(criterion["id"]),
+                    "title": str(criterion["title"]),
+                    "levels": [str(level).strip() for level in criterion["levels"]],
+                }
+                for criterion in criteria
+            ],
+        },
+        "tests": tests,
+    }
 
 
 def strict_units(question: Question) -> bool:
@@ -795,7 +837,7 @@ def load_quiz(path: Path, source: dict) -> dict:
 def compile_tree(source: Path, out: Path, stackversion: str) -> int:
     questions: dict[str, Question] = {}
     quizzes: list[dict] = []
-    aitext: dict[str, Path] = {}
+    aitext: dict[str, dict] = {}
 
     for path in sorted(source.rglob("*.yaml")):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -806,10 +848,10 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
             continue
         qtype = data.get("type", "stack")
         if qtype == "aitext":
-            qid = load_aitext_question(path, data)
-            if qid in questions or qid in aitext:
-                fail(path, f"id '{qid}' already used")
-            aitext[qid] = path
+            spec = load_aitext_question(path, data)
+            if spec["id"] in questions or spec["id"] in aitext:
+                fail(path, f"id '{spec['id']}' already used")
+            aitext[spec["id"]] = spec
             continue
         if qtype != "stack":
             fail(path, f"unknown question type '{qtype}'")
@@ -825,7 +867,7 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
 
     # Start from a clean tree so that renamed or deleted sources cannot leave
     # stale XML behind for the importer to pick up.
-    for stale in (out / "questions", out / "quizzes"):
+    for stale in (out / "questions", out / "quizzes", out / "aitext"):
         shutil.rmtree(stale, ignore_errors=True)
 
     for question in questions.values():
@@ -841,10 +883,18 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
                 json.dumps(quiz, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
 
+    if aitext:
+        aitextdir = out / "aitext"
+        aitextdir.mkdir(parents=True, exist_ok=True)
+        for spec in aitext.values():
+            (aitextdir / f"{spec['id']}.json").write_text(
+                json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+
     print(f"compiled {len(questions)} questions, {len(quizzes)} quizzes into {out}")
     if aitext:
-        print(f"validated {len(aitext)} aitext questions, "
-              "NOT compiled: the drilling extension is pending")
+        print(f"compiled {len(aitext)} aitext questions into eval specs "
+              "(Moodle import still pending)")
     return 0
 
 

@@ -1,0 +1,17 @@
+# Development overlay: mount the qtype_aitext fork working copy over the
+# plugin baked into the image, for the inner dev loop of the drilling
+# extension (see notes/aitext-extension-architecture.md). Not for CI or
+# the server; versions.yml pins move to fork commit SHAs at commit
+# boundaries instead.
+#
+# Usage:
+#   docker compose --env-file .env.versions --env-file .env \
+#     -f docker-compose.yml -f docker-compose.aitext-dev.yml up -d
+#   docker compose ... exec moodle php admin/cli/upgrade.php --non-interactive
+services:
+  moodle:
+    volumes:
+      - ../moodle-qtype_aitext:/var/www/html/public/question/type/aitext:ro
+  moodle-cron:
+    volumes:
+      - ../moodle-qtype_aitext:/var/www/html/public/question/type/aitext:ro

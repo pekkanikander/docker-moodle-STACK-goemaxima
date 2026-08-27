@@ -57,6 +57,13 @@ quizzes() {
   done
 }
 
+# Golden tests of aitext questions through the real AI pipeline. Costs API
+# money (one model call per test) and needs a working AI provider; run on
+# demand, not part of 'all'.
+aitest() {
+  dc exec -T moodle php /opt/qbank/cli/aitext-test.php "$@"
+}
+
 # bulktestall always exits 0, so the verdict has to come from its output.
 questiontests() {
   out="$(dc exec -T moodle php public/question/type/stack/cli/bulktestall.php)"
@@ -74,6 +81,7 @@ case "$command" in
   import) import "$@" ;;
   quizzes) quizzes ;;
   test) questiontests ;;
+  aitest) aitest "$@" ;;
   all)
     compile
     import
@@ -81,7 +89,7 @@ case "$command" in
     questiontests
     ;;
   *)
-    echo "Usage: $0 [compile|import|quizzes|test|all]" >&2
+    echo "Usage: $0 [compile|import|quizzes|test|aitest|all]" >&2
     exit 1
     ;;
 esac
