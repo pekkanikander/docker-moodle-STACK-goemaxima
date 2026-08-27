@@ -23,6 +23,16 @@ context: |
   yhdeksäsluokkalainen. Arvioi vain kriteerien perusteella; älä vaadi
   kaavoja tai lukuarvoja.
 
+# Answer skeleton (Feature 2, scaffold level 1): shown above the answer
+# box while answering; never sent to the grader model. Mirrors the rubric
+# criteria without giving the answer away.
+scaffold: |
+  Vastauksen runko:
+
+  - Vertaa kummankin kappaleen tiheyttä veden tiheyteen.
+  - Selitä nosteen avulla, miksi toinen kappale jää pinnalle ja toinen painuu pohjaan.
+  - Muista käsitellä sekä puinen että teräksinen kappale.
+
 sampleanswer: |
   Puu kelluu, koska puun tiheys on pienempi kuin veden tiheys. Silloin
   veden noste on yhtä suuri kuin puukappaleen paino jo ennen kuin kappale

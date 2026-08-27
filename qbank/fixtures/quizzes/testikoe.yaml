@@ -3,7 +3,8 @@ name: "Fixture: koejärjestelmän testi"
 intro: |
   Tämä koe on testiaineistoa, ei oikeaa harjoitusmateriaalia. Se käy läpi
   kaikki tuetut tehtävätyypit: satunnaistetut muuttujat, numeerinen,
-  algebrallinen ja yksiköllinen vastaus sekä tulkintatuen kolme tasoa.
+  algebrallinen ja yksiköllinen vastaus, tulkintatuen kolme tasoa sekä
+  AI-arvioitu selitystehtävä.
 
 behaviour: adaptive
 questionsperpage: 1
@@ -19,3 +20,5 @@ questions:
   - id: fixture-matka-choice
     maxmark: 2
   - id: fixture-matka-none
+  - id: fixture-selitys-kelluminen
+    maxmark: 5

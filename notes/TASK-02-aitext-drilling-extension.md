@@ -62,6 +62,28 @@ A question authoring option `scaffold_level`:
 Keep the levels as three configurations of one question type, not three
 question types.
 
+**Status (2026-08-27): levels 1 and 2 implemented; level 0 deliberately
+deferred** (decision after Feature 1/3/4 testing). Question fields
+`scaffold` (skeleton HTML) and `scaffoldlevel` (1 = shown, 2 = plain box,
+default; 0 reserved) on the fork; rendering is purely presentational — the
+grader model never sees the skeleton. A per-quiz override lives in
+`qtype_aitext_quiz` and is edited on the quiz settings form ("AI text
+questions" section) via the `coursemodule_standard_elements` /
+`coursemodule_edit_post_actions` plugin callbacks. The compiler emits
+aitext Moodle XML, so `tools/qbank.sh import` now covers aitext questions
+and quizzes may reference them.
+
+Parked ideas, to revisit on evidence from testing with the student:
+
+- **Level 0 (labelled boxes)** stays in reserve; implement only if level 1
+  proves insufficient. Needs `get_expected_data()` etc. changes, see the
+  architecture note.
+- **AI-assisted skeletons:** author a first skeleton on the question, then
+  iterate it with model help (or generate it from the rubric).
+- **Dynamic scaffold level:** fade the scaffold automatically per student
+  based on their recent performance, instead of the static per-quiz
+  override.
+
 ## Feature 3 — Grading progression: none → coarse → fine
 
 Question-level setting `grading_mode`:

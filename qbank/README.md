@@ -200,11 +200,11 @@ the student must commit to a reading first.
 
 A file with `type: aitext` is an explanation question graded by an LLM
 against a criterion rubric, not by Maxima. The design and its rationale are
-in `notes/aitext-rubric-design.md`; the grading pipeline (a fork of
-`qtype_aitext`) is under construction. **Until it lands, the compiler
-validates these sources and skips them** — no XML is emitted and quizzes
-may not reference them yet — so content can be written and reviewed now
-against the same rules the extension will enforce.
+in `notes/aitext-rubric-design.md`; the grading pipeline is our fork of
+`qtype_aitext`. Each source compiles to two artefacts: Moodle XML under
+`questions/` for import (quizzes may reference aitext questions like any
+other), and an eval spec under `aitext/` for the golden-test harness
+(`tools/qbank.sh aitest`).
 
 ```yaml
 id: selitys-kelluminen-01
@@ -220,6 +220,11 @@ context: |                    # optional; grader-model context, never shown
   Peruskoulun fysiikan selitystehtävä. Älä vaadi kaavoja.
 
 sampleanswer: |               # a model answer, given to the grader
+
+scaffold: |                   # optional answer skeleton (see below)
+  Vastauksen runko:
+
+  - Vertaa kappaleiden tiheyttä veden tiheyteen.
 
 rubric:
   criteria:                   # 2-5 criteria
@@ -247,6 +252,15 @@ only thing the model decides. Three levels is the intended default
 (absent / partial / met); two make a strict met-or-not criterion.
 Descriptors must be observable ("mainitsee X"), not mental-state
 ("ymmärtää X").
+
+`scaffold:` is the scaffold-then-fade support (formatted like `stem`):
+when present, it is shown above the answer box while the student is
+answering — a suggested structure, typically mirroring the rubric criteria
+without giving the answer away. It is purely presentational: the grader
+model never sees it. A question without `scaffold` shows a plain answer
+box. Each quiz can override the level in its settings ("AI text
+questions"), forcing the skeleton on or off for every aitext question in
+that quiz.
 
 `tests:` are the aitext analogue of STACK question tests: each sample
 answer is run through the real grading pipeline and the criterion levels

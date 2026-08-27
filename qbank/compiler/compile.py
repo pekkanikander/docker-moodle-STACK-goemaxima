@@ -290,13 +290,12 @@ def load_question(path: Path, source: dict) -> Question:
 
 
 def load_aitext_question(path: Path, source: dict) -> dict:
-    """Validate an aitext drilling question and return its eval spec.
+    """Validate an aitext drilling question and return its spec.
 
-    The spec (JSON, written under <out>/aitext/) carries the question, the
-    rubric in the exact shape the qtype_aitext fork stores it, and the
-    golden tests for the evaluation harness (qbank/cli/aitext-test.php).
-    Import into Moodle is still pending; until it lands these compile to
-    eval specs only, and quizzes may not reference them.
+    The spec is written twice: as an eval spec (JSON under <out>/aitext/)
+    carrying the rubric in the exact shape the qtype_aitext fork stores it
+    plus the golden tests for the evaluation harness (qbank/cli/
+    aitext-test.php), and as Moodle XML under <out>/questions/ for import.
     """
     qid = str(require(path, source, "id"))
     if not ID_RE.match(qid):
@@ -366,6 +365,8 @@ def load_aitext_question(path: Path, source: dict) -> dict:
             "why": str(test.get("why", "")).strip(),
         })
 
+    scaffold = str(source.get("scaffold", "")).strip()
+
     return {
         "id": qid,
         "name": str(source["name"]),
@@ -374,6 +375,9 @@ def load_aitext_question(path: Path, source: dict) -> dict:
         "stem_html": to_html(str(source["stem"])),
         "context": str(source.get("context", "")).strip(),
         "feedback_html": to_html(str(source.get("feedback", ""))),
+        # An authored skeleton turns the visible-scaffold level on (Feature 2);
+        # purely presentational, the grading pipeline never sees it.
+        "scaffold_html": to_html(scaffold) if scaffold else "",
         # The rubric column of the qtype_aitext fork, verbatim.
         "rubric": {
             "language": str(source["language"]),
@@ -390,6 +394,57 @@ def load_aitext_question(path: Path, source: dict) -> dict:
         },
         "tests": tests,
     }
+
+
+def render_aitext_question(spec: dict) -> str:
+    """Moodle XML for an aitext question, mirroring qbank/cli/aitext-test.php:
+    the grading context becomes the aiprompt, the rubric JSON goes in
+    verbatim, and the markscheme stays empty so grading takes the rubric
+    path. The element names are the fork's extra_question_fields()."""
+    tags = ""
+    if spec["tags"]:
+        items = "".join(f"      <tag><text>{escape(tag)}</text></tag>\n" for tag in spec["tags"])
+        tags = f"    <tags>\n{items}    </tags>\n"
+
+    # The sample answer doubles as a sample response for the prompt tester
+    # in the question editing form.
+    sampleresponse = ""
+    if spec["rubric"]["sampleanswer"]:
+        sampleresponse = (
+            "    <sampleresponse>\n"
+            f"      <response>{escape(spec['rubric']['sampleanswer'])}</response>\n"
+            "    </sampleresponse>\n"
+        )
+
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        "<quiz>\n"
+        '  <question type="aitext">\n'
+        f"    <name>\n      <text>{escape(spec['name'])}</text>\n    </name>\n"
+        + text_element("questiontext", spec["stem_html"])
+        + text_element("generalfeedback", spec["feedback_html"])
+        + element("defaultgrade", 1)
+        + element("penalty", 0)
+        + element("hidden", 0)
+        + element("idnumber", spec["id"])
+        + element("responseformat", "plain")
+        + element("responsefieldlines", 10)
+        + element("minwordlimit", "")
+        + element("maxwordlimit", "")
+        + text_element("graderinfo", "")
+        + text_element("responsetemplate", "")
+        + element("aiprompt", escape(spec["context"]))
+        + element("markscheme", "")
+        + element("rubric", escape(json.dumps(spec["rubric"], ensure_ascii=False)))
+        + element("scaffold", escape(spec["scaffold_html"]))
+        + element("scaffoldlevel", 1 if spec["scaffold_html"] else 2)
+        + element("model", "")
+        + element("spellcheck", 0)
+        + sampleresponse
+        + tags
+        + "  </question>\n"
+        "</quiz>\n"
+    )
 
 
 def strict_units(question: Question) -> bool:
@@ -862,7 +917,7 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
 
     for quiz in quizzes:
         for entry in quiz["questions"]:
-            if entry["id"] not in questions:
+            if entry["id"] not in questions and entry["id"] not in aitext:
                 raise SourceError(f"quiz '{quiz['id']}' refers to unknown question '{entry['id']}'")
 
     # Start from a clean tree so that renamed or deleted sources cannot leave
@@ -890,11 +945,12 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
             (aitextdir / f"{spec['id']}.json").write_text(
                 json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
+            target = out.joinpath("questions", *spec["category"], f"{spec['id']}.xml")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(render_aitext_question(spec), encoding="utf-8")
 
-    print(f"compiled {len(questions)} questions, {len(quizzes)} quizzes into {out}")
-    if aitext:
-        print(f"compiled {len(aitext)} aitext questions into eval specs "
-              "(Moodle import still pending)")
+    print(f"compiled {len(questions)} STACK and {len(aitext)} aitext questions, "
+          f"{len(quizzes)} quizzes into {out}")
     return 0
 
 
