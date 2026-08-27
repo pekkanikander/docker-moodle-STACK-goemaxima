@@ -133,3 +133,13 @@ On the review/feedback display, one button: **"Flag for teacher review"**.
 
 At step 1, stop and present the architecture note for review before writing
 code.
+
+## Known issues (return to these)
+
+- Flag notification does not appear in the bell icon (observed 2026-08-27,
+  local manual test). The `notifications` table row is created with correct
+  content, so `message_send()` works; the bell UI reads
+  `message_popup_notifications`, written by the popup message processor.
+  Check whether the popup processor is enabled and whether the failing email
+  processor (no MTA in the local container) is implicated. Re-test on the
+  server, which has a working MTA.
