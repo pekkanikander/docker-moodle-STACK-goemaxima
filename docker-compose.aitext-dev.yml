@@ -12,6 +12,8 @@ services:
   moodle:
     volumes:
       - ../moodle-qtype_aitext:/var/www/html/public/question/type/aitext:ro
+      - ../moodle-local_aitextflags:/var/www/html/public/local/aitextflags:ro
   moodle-cron:
     volumes:
       - ../moodle-qtype_aitext:/var/www/html/public/question/type/aitext:ro
+      - ../moodle-local_aitextflags:/var/www/html/public/local/aitextflags:ro
