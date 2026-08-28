@@ -1,5 +1,11 @@
 # qtype_aitext drilling extension — architecture note (Task 2, step 1)
 
+> **Status (2026-08-28):** historical design document. All five features are
+> implemented (Feature 2 at levels 1+2 only; level 0, `double_run` and
+> `fuzz` deferred by decision — see the task note for status and parked
+> ideas). Kept for the extension-point map and the fork/companion split
+> rationale.
+
 Source read: `marcusgreen/moodle-qtype_aitext` @ c45b8d2 (v2.1.0, unreleased —
 35 commits past the last tag v2.03), plus `qbehaviour_deferred_for_aitext` and
 `qbehaviour_immediate_for_aitext` (hard dependencies since 2.1.0, untagged).
@@ -53,8 +59,8 @@ milestone 1; pins in `versions.yml` (commit-SHA archives until upstream tags).
 2. ~~Fork + companion skeleton on GitHub~~ (done:
    `pekkanikander/moodle-qtype_aitext` branch `drilling`,
    `pekkanikander/moodle-local_aitextflags`; sibling working copies).
-3. Feature 1 → 3 → 4 → 2, with 5 alongside renderer work. Rubric design
-   detailed in `aitext-rubric-design.md` (review gate for Feature 1).
+3. ~~Feature 1 → 3 → 4 → 2, with 5 alongside renderer work~~ (done
+   2026-08-27; rubric design detailed in `aitext-rubric-design.md`).
 
 Dev loop (decided 2026-08-26): bind-mount the fork working copy into the
 local container for the inner loop; repoint `versions.yml` pins to fork

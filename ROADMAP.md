@@ -32,7 +32,7 @@ currently being tested with the student.
 
 Extend beyond STACK's numeric/CAS grading to formative essay drilling, using
 the Moodle core AI subsystem as the provider-agnostic abstraction. Task briefs
-in `notes/`; to be started soon, not yet begun.
+in `notes/`; feature work done locally, operationalisation pending.
 
 - [x] TASK-01 (`notes/TASK-01-anthropic-aiprovider.md`): done 2026-08-26.
       Survey (`notes/aiprovider-survey.md`) found the contributed
@@ -46,11 +46,20 @@ in `notes/`; to be started soon, not yet begun.
       Milestone 1 done 2026-08-26: vanilla qtype_aitext 2.1.0 (+ its two
       behaviour adapter plugins) baked into the image, pinned by commit SHA
       (2.1.0 untagged upstream); architecture note in
-      `notes/aitext-extension-architecture.md`, awaiting review before
-      extension code. Fork (`pekkanikander/moodle-qtype_aitext`, branch
-      `drilling` from the pinned commit) and companion-plugin skeleton
-      (`pekkanikander/moodle-local_aitextflags`) created 2026-08-26 as
-      sibling repos.
+      `notes/aitext-extension-architecture.md`. Milestone 2 done 2026-08-27:
+      all five features implemented for the agreed scope on the fork
+      (`pekkanikander/moodle-qtype_aitext`, branch `drilling`) and companion
+      (`pekkanikander/moodle-local_aitextflags`), running locally via the
+      dev overlay (`docker-compose.aitext-dev.yml`); the qbank compiler
+      emits aitext Moodle XML and a golden-test harness
+      (`tools/qbank.sh aitest`) exercises real grading. Deferred by
+      decision (recorded in the task note): scaffold level 0,
+      `double_run`/`fuzz`, dynamic scaffold level. Remaining to close:
+      hardening (PHPUnit, moodle-cs, flags-table backup decision) and
+      operationalisation — repoint `versions.yml` to a fork SHA, bake the
+      companion into the image, drop the dev overlay from the deploy path.
+      Until then CI and the server run the *upstream* plugin, which would
+      silently drop rubric/scaffold fields on qbank import.
 
 ## M6 — Operational trust
 

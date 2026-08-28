@@ -205,5 +205,5 @@ of the descriptors; template labels come from lang strings (fi + en).
 5. Student-facing language follows the question's `language` field.
 
 Fixture: `qbank/fixtures/questions/selitys/kelluminen.yaml` (source format
-in `qbank/README.md`); the compiler validates aitext sources now and
-compiles them once the extension lands.
+in `qbank/README.md`); the compiler validates aitext sources and compiles
+them to both the eval spec and Moodle XML (imported by `tools/qbank.sh`).
