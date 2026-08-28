@@ -53,6 +53,7 @@ MOODLE_NOREPLY_EMAIL=noreply@example.com
 # All outgoing mail is captured by the bundled Mailpit;
 # browse it at http://localhost:8025.
 MOODLE_SMTPHOSTS=mailpit:1025
+COMPOSE_PROFILES=mail-capture
 
 # Finnish is installed alongside English; browsers asking for Finnish get it,
 # everything else falls back to MOODLE_LANG.
@@ -106,6 +107,8 @@ else
 fi
 phase "Configuring languages."
 ./init/scripts/lang-init.sh
+phase "Configuring outgoing mail."
+./init/scripts/mail-init.sh
 phase "Configuring STACK."
 ./init/scripts/stack-init.sh
 

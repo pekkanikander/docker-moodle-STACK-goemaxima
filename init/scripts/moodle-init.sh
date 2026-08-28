@@ -11,8 +11,6 @@ MOODLE_ADMIN_USER="${MOODLE_ADMIN_USER:-admin}"
 
 require_nonempty "MOODLE_ADMIN_PASSWORD" "${MOODLE_ADMIN_PASSWORD:-}"
 require_nonempty "MOODLE_ADMIN_EMAIL" "${MOODLE_ADMIN_EMAIL:-}"
-require_nonempty "MOODLE_NOREPLY_EMAIL" "${MOODLE_NOREPLY_EMAIL:-}"
-require_nonempty "MOODLE_SMTPHOSTS" "${MOODLE_SMTPHOSTS:-}"
 
 if dc exec -T moodle test -f /var/www/html/config.php; then
   log "Removing existing config.php to force a fresh install."
@@ -63,14 +61,6 @@ dc exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php \
 log "Enabling cron setting."
 dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --component=core --name=cron_enabled --set=1
-log "Setting Moodle noreply address."
-dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
-  --name=noreplyaddress \
-  --set="${MOODLE_NOREPLY_EMAIL}"
-log "Setting outgoing SMTP host."
-dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
-  --name=smtphosts \
-  --set="${MOODLE_SMTPHOSTS}"
 log "Hiding the guest login button."
 dc exec -T moodle php /var/www/html/admin/cli/cfg.php \
   --name=guestloginbutton --set=0

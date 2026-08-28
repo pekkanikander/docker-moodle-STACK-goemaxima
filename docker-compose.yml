@@ -114,6 +114,9 @@ services:
 
   mailpit:
     image: ${MAILPIT_IMAGE?Set MAILPIT_IMAGE}
+    # Local development and CI only (COMPOSE_PROFILES=mail-capture); servers
+    # relaying to a real SMTP host run without it.
+    profiles: ["mail-capture"]
     ports:
       - "127.0.0.1:${MAILPIT_HTTP_PORT:-8025}:8025"
     networks:

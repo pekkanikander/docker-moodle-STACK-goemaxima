@@ -50,9 +50,11 @@ Or run the steps yourself:
    - `./init/scripts/moodle-init.sh`
 4) Install language packs and set the default language:
    - `./init/scripts/lang-init.sh`
-5) Configure STACK (optional but recommended):
+5) Configure outgoing mail (noreply address, SMTP target):
+   - `./init/scripts/mail-init.sh`
+6) Configure STACK (optional but recommended):
    - `./init/scripts/stack-init.sh`
-6) Open `http://localhost:${MOODLE_HTTP_PORT}` and log in with your admin credentials.
+7) Open `http://localhost:${MOODLE_HTTP_PORT}` and log in with your admin credentials.
 
 `.env.versions` is committed and generated from `versions.yml`; after editing
 `versions.yml`, maintainers regenerate it with `./tools/update-versions.sh`
@@ -78,8 +80,12 @@ Common overrides:
 - `MOODLE_PERSISTENT_ROOT` (bind-mount root for moodledata and mariadb)
 - `MOODLE_SMTPHOSTS` (outgoing mail target as `host:port`; `mailpit:1025`
   sends to the bundled Mailpit capture, browsable at
-  `http://localhost:${MAILPIT_HTTP_PORT}` — for production use a real relay
-  and set its credentials in the Moodle admin UI)
+  `http://localhost:${MAILPIT_HTTP_PORT}` — for real delivery use a relay
+  and set its credentials in the Moodle admin UI; `mail-init.sh` is safe to
+  rerun and applies changed mail settings to an installed site)
+- `MOODLE_SMTPSECURE` (SMTP transport security: empty, `tls` or `ssl`)
+- `COMPOSE_PROFILES` (`mail-capture` runs the bundled Mailpit; empty on
+  servers relaying to a real SMTP host)
 - `MAILPIT_HTTP_PORT` (host-local port for the Mailpit web UI, default `8025`)
 Less common overrides:
 - `DOCKER_COMPOSE_ARGS` (extra arguments passed to `docker compose` by init scripts)
