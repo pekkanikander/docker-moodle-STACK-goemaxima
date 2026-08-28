@@ -50,6 +50,10 @@ MOODLE_ADMIN_PASSWORD=Change-me!
 MOODLE_ADMIN_FORCE_PASSWORD_CHANGE=1
 MOODLE_NOREPLY_EMAIL=noreply@example.com
 
+# All outgoing mail is captured by the bundled Mailpit;
+# browse it at http://localhost:8025.
+MOODLE_SMTPHOSTS=mailpit:1025
+
 # Finnish is installed alongside English; browsers asking for Finnish get it,
 # everything else falls back to MOODLE_LANG.
 MOODLE_LANGPACKS=fi

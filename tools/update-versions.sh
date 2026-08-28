@@ -69,6 +69,7 @@ require_value "MOODLE_AITEXT_BEHAVIOUR_IMMEDIATE_URL" '.aitext_behaviour_plugin_
 require_value "MOODLE_AITEXT_BEHAVIOUR_IMMEDIATE_SHA256" '.aitext_behaviour_plugin_sha256.qbehaviour_immediate_for_aitext'
 require_value "MOODLE_LOCAL_AITEXTFLAGS_URL" '.local_aitextflags_url'
 require_value "MOODLE_LOCAL_AITEXTFLAGS_SHA256" '.local_aitextflags_sha256'
+require_value "MAILPIT_IMAGE" '.mailpit_image'
 require_value "QBANK_TOOLS_BASE_IMAGE" '.qbank_tools_base_image'
 require_value "QBANK_TOOLS_PYYAML_VERSION" '.qbank_tools_pyyaml_version'
 

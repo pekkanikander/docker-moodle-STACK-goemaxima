@@ -25,6 +25,7 @@ tuples:
     qbank_tools:
       base_image: "python:3.13-slim"
       pyyaml: "6.0.2"
+    mailpit: "axllent/mailpit:v1.31.0"
     ai_provider:
       plugin: "aiprovider_claude"
       version: "1.0.4"

@@ -94,6 +94,25 @@ if ($errors) {
 }
 '
 
+# Only when Moodle sends to the bundled Mailpit (local/CI); production
+# points smtphosts at a real relay, which this check cannot inspect.
+if [ "${MOODLE_SMTPHOSTS:-}" = "mailpit:1025" ]; then
+  echo "Checking outgoing mail via Mailpit..."
+  subject="smoke-$(date +%s)-$$"
+  dc exec -T -u www-data -e SMOKE_SUBJECT="$subject" moodle php -r '
+  define("CLI_SCRIPT", true);
+  require "/var/www/html/config.php";
+  $ok = email_to_user(get_admin(), core_user::get_noreply_user(),
+      getenv("SMOKE_SUBJECT"), "Outgoing mail smoke test.");
+  exit($ok ? 0 : 1);
+  '
+  if ! curl -fsS "http://localhost:${MAILPIT_HTTP_PORT:-8025}/api/v1/search?query=subject:${subject}" \
+      | grep -q "$subject"; then
+    echo "ERROR: message '${subject}' not found in Mailpit" >&2
+    exit 1
+  fi
+fi
+
 echo "Checking goemaxima endpoint..."
 if dc exec -T moodle curl -fsS http://maxima:8080/goemaxima >/dev/null; then
   exit 0

@@ -112,6 +112,16 @@ services:
       - backend
       - frontend
 
+  mailpit:
+    image: ${MAILPIT_IMAGE?Set MAILPIT_IMAGE}
+    ports:
+      - "127.0.0.1:${MAILPIT_HTTP_PORT:-8025}:8025"
+    networks:
+      # SMTP (port 1025) stays internal-only on backend; frontend is needed
+      # solely because a published port requires a non-internal network.
+      - backend
+      - frontend
+
   qbank-tools:
     image: docker-moodle-stack-goemaxima-qbank-tools
     profiles: ["tools"]

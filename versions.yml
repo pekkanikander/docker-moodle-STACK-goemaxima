@@ -80,6 +80,10 @@ local_aitextflags_ref: "12e17ebfa5f717716f693e44bb6a312189a77bfa"
 local_aitextflags_url: "https://github.com/pekkanikander/moodle-local_aitextflags/archive/12e17ebfa5f717716f693e44bb6a312189a77bfa.zip"
 local_aitextflags_sha256: "abefcf18e3b65e9c7a6d456bed3fa218a7037698d2ca7ba1bafe44b4f0c2e6ed"
 
+# Mail capture for local development and CI: Moodle's smtphosts points here
+# (see MOODLE_SMTPHOSTS in .env.example); production points at a real relay.
+mailpit_image: "axllent/mailpit:v1.31.0"
+
 # Image used to compile question sources into Moodle XML; see qbank/.
 qbank_tools_base_image: "python:3.13-slim"
 qbank_tools_pyyaml_version: "6.0.2"

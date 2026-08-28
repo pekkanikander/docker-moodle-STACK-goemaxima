@@ -87,6 +87,10 @@ On the VM (`ssh moodle-hetzner`), edit `/opt/moodle-stack/.env` (nano or vi):
 - `MOODLE_ADMIN_EMAIL`, `MOODLE_ADMIN_PASSWORD` (real values; the password is
   the actual admin login)
 - `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_NOREPLY_EMAIL`
+- `MOODLE_SMTPHOSTS` (the `.env.example` default sends to the bundled Mailpit
+  capture, which real recipients never see; for real delivery set an
+  authenticated relay, e.g. `smtp.iki.fi:587`, and configure its username and
+  password in the Moodle admin UI under Server > Email > Outgoing mail)
 - `MOODLE_LANGPACKS` (e.g. `fi`) and `MOODLE_LANG` (fallback, `en`); `.env.example`
   installs no packs, so this must be set here to get anything but English
 

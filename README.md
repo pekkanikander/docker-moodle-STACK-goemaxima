@@ -76,6 +76,11 @@ Common overrides:
 - `MOODLE_LANG` (fallback site language, default `en`; must be `en` or one of
   `MOODLE_LANGPACKS`)
 - `MOODLE_PERSISTENT_ROOT` (bind-mount root for moodledata and mariadb)
+- `MOODLE_SMTPHOSTS` (outgoing mail target as `host:port`; `mailpit:1025`
+  sends to the bundled Mailpit capture, browsable at
+  `http://localhost:${MAILPIT_HTTP_PORT}` — for production use a real relay
+  and set its credentials in the Moodle admin UI)
+- `MAILPIT_HTTP_PORT` (host-local port for the Mailpit web UI, default `8025`)
 Less common overrides:
 - `DOCKER_COMPOSE_ARGS` (extra arguments passed to `docker compose` by init scripts)
 - `MARIADB_UID`, `MARIADB_GID` (override mysql UID/GID inside the image for bind mounts)
