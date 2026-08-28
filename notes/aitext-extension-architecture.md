@@ -61,7 +61,8 @@ milestone 1; pins in `versions.yml` (commit-SHA archives until upstream tags).
    `pekkanikander/moodle-qtype_aitext` branch `drilling`,
    `pekkanikander/moodle-local_aitextflags`; sibling working copies).
 3. ~~Feature 1 → 3 → 4 → 2, with 5 alongside renderer work~~ (done
-   2026-08-27; rubric design detailed in `aitext-rubric-design.md`).
+   2026-08-27; rubric design detailed in the plugin repo's
+   [docs/rubric-design.md](https://github.com/pekkanikander/moodle-qtype_aitext_rubric/blob/main/docs/rubric-design.md)).
 
 Dev loop (decided 2026-08-26): bind-mount the fork working copy into the
 local container for the inner loop; repoint `versions.yml` pins to fork
