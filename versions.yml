@@ -57,24 +57,28 @@ aiprovider_claude_tag: "1.0.4"
 aiprovider_claude_url: "https://github.com/ashishptl21/moodle-aiprovider_claude/archive/refs/tags/1.0.4.zip"
 aiprovider_claude_sha256: "01da5cd37cdc36a3e53d8e0f8abda0446ed0da85ea2e551bdd8a555ff6ca667a"
 
-# aitext (AI-graded free text) question type and its two required behaviour
-# adapter plugins, for essay drilling (notes/TASK-02). Pinned to commit SHA
-# archives: the current release 2.1.0 (which introduced the behaviour
-# dependencies) is not tagged upstream yet, and the behaviour repos carry no
-# tags at all. Switch to tag archives when upstream tags them.
-qtype_aitext_ref: "c45b8d20e61962157e22498b09630b1c77c5bf5c"
-qtype_aitext_version: "2.1.0"
-qtype_aitext_url: "https://github.com/marcusgreen/moodle-qtype_aitext/archive/c45b8d20e61962157e22498b09630b1c77c5bf5c.zip"
-qtype_aitext_sha256: "78c89b29a0c7c4c74de26ed8a6172563463e210172a4072569033b27a86d0003"
+# aitext_rubric (AI-graded free text with a criterion rubric; our fork of
+# qtype_aitext, notes/TASK-02) and its two required behaviour adapter
+# plugins (also our forks: upstream ties them to qtype_aitext releases).
+# The qtype is pinned to its release tag; the behaviour forks carry no tags
+# yet, so they are pinned by commit SHA. The local_aitextflags companion
+# (flag-for-teacher) is likewise pinned by commit SHA until first tagged.
+qtype_aitext_rubric_tag: "v0.1.0"
+qtype_aitext_rubric_version: "0.1.0"
+qtype_aitext_rubric_url: "https://github.com/pekkanikander/moodle-qtype_aitext_rubric/archive/refs/tags/v0.1.0.zip"
+qtype_aitext_rubric_sha256: "9057e79efa3b4fd52feae560d5e7d43485fa6ce37a0eb139dd1c6695d8062c57"
 aitext_behaviour_plugin_refs:
-  qbehaviour_deferred_for_aitext: "ebff2a670895176b670a960d1776cc49a9d22d5f"
-  qbehaviour_immediate_for_aitext: "c7bd04ce5e2ea47a18c3ac274b471351888e9b6e"
+  qbehaviour_deferred_for_aitext: "1a29c4a06334cdfea3d8e0928f7b2aac58b4fb49"
+  qbehaviour_immediate_for_aitext: "8e8c6352bb3932b25bea874dcfd92d77d6ec4d7a"
 aitext_behaviour_plugin_urls:
-  qbehaviour_deferred_for_aitext: "https://github.com/marcusgreen/moodle-qbehaviour_deferred_for_aitext/archive/ebff2a670895176b670a960d1776cc49a9d22d5f.zip"
-  qbehaviour_immediate_for_aitext: "https://github.com/marcusgreen/moodle-qbehaviour_immediate_for_aitext/archive/c7bd04ce5e2ea47a18c3ac274b471351888e9b6e.zip"
+  qbehaviour_deferred_for_aitext: "https://github.com/pekkanikander/moodle-qbehaviour_deferred_for_aitext/archive/1a29c4a06334cdfea3d8e0928f7b2aac58b4fb49.zip"
+  qbehaviour_immediate_for_aitext: "https://github.com/pekkanikander/moodle-qbehaviour_immediate_for_aitext/archive/8e8c6352bb3932b25bea874dcfd92d77d6ec4d7a.zip"
 aitext_behaviour_plugin_sha256:
-  qbehaviour_deferred_for_aitext: "4f597ea092ef689164f58d27928d4fc36013ff7bf2883397d4d124aea65ec816"
-  qbehaviour_immediate_for_aitext: "ad46be72379f5233f39480503e0e485a01d2ac68e8a1ae94ab9c602f69b30fe3"
+  qbehaviour_deferred_for_aitext: "f633e6ad48c638eeddd363022eaceadf20f6d3d7f73923c671ed3b08e02a3304"
+  qbehaviour_immediate_for_aitext: "7ab8f7c79def867a632112c6d88d467b79b0a06b6f32a775c64881318a3b21ce"
+local_aitextflags_ref: "8a326203b93f25d06b81401691eeedf24381791b"
+local_aitextflags_url: "https://github.com/pekkanikander/moodle-local_aitextflags/archive/8a326203b93f25d06b81401691eeedf24381791b.zip"
+local_aitextflags_sha256: "cbbc1b803d8aabd48ef2c4d87d1cefd8a67c4495d54b9b71f5498783d73f14ad"
 
 # Image used to compile question sources into Moodle XML; see qbank/.
 qbank_tools_base_image: "python:3.13-slim"

@@ -59,12 +59,12 @@ in `notes/`; feature work done locally, operationalisation pending.
       requires the two behaviour forks
       `pekkanikander/moodle-qbehaviour_{immediate,deferred}_for_aitext`.
       Deferred by decision (recorded in the task note): scaffold level 0,
-      `double_run`/`fuzz`, dynamic scaffold level. Remaining to close:
-      operationalisation — repoint `versions.yml` to the 0.1.0 release and
-      the behaviour forks, bake the companion into the image, drop the dev
-      overlay from the deploy path. Until then CI and the server run the
-      upstream `qtype_aitext`, and the compiler's `aitext_rubric` XML will
-      not import there.
+      `double_run`/`fuzz`, dynamic scaffold level. Operationalised
+      2026-08-28: `versions.yml` pins the 0.1.0 release, the behaviour
+      forks and the companion (by commit SHA); all four are baked into the
+      image and smoke-tested, and the dev overlay is no longer needed to
+      run the extension. Remaining: Behat for the student flow, bell-icon
+      notification re-test on the server.
 
 ## M6 — Operational trust
 

@@ -27,10 +27,16 @@ foreach (["dfexplicitvaildate", "dfcbmexplicitvaildate", "adaptivemultipart", "d
     $errors[] = "qbehaviour_" . $p . " not registered. Found behaviours: " . implode(", ", array_keys($qb));
   }
 }
-if (!isset($qt["aitext"])) {
-  $errors[] = "qtype_aitext not registered. Found qtypes: " . implode(", ", array_keys($qt));
-} else if (!get_config("qtype_aitext", "version")) {
-  $errors[] = "qtype_aitext files present but not installed in the DB; run admin/cli/upgrade.php";
+if (!isset($qt["aitext_rubric"])) {
+  $errors[] = "qtype_aitext_rubric not registered. Found qtypes: " . implode(", ", array_keys($qt));
+} else if (!get_config("qtype_aitext_rubric", "version")) {
+  $errors[] = "qtype_aitext_rubric files present but not installed in the DB; run admin/cli/upgrade.php";
+}
+$local = core_component::get_plugin_list("local");
+if (!isset($local["aitextflags"])) {
+  $errors[] = "local_aitextflags not registered. Found local plugins: " . implode(", ", array_keys($local));
+} else if (!get_config("local_aitextflags", "version")) {
+  $errors[] = "local_aitextflags files present but not installed in the DB; run admin/cli/upgrade.php";
 }
 $qbank = core_component::get_plugin_list("qbank");
 if (!isset($qbank["importasversion"])) {
