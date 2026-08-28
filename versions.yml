@@ -76,9 +76,9 @@ aitext_behaviour_plugin_urls:
 aitext_behaviour_plugin_sha256:
   qbehaviour_deferred_for_aitext: "f633e6ad48c638eeddd363022eaceadf20f6d3d7f73923c671ed3b08e02a3304"
   qbehaviour_immediate_for_aitext: "7ab8f7c79def867a632112c6d88d467b79b0a06b6f32a775c64881318a3b21ce"
-local_aitextflags_ref: "8a326203b93f25d06b81401691eeedf24381791b"
-local_aitextflags_url: "https://github.com/pekkanikander/moodle-local_aitextflags/archive/8a326203b93f25d06b81401691eeedf24381791b.zip"
-local_aitextflags_sha256: "cbbc1b803d8aabd48ef2c4d87d1cefd8a67c4495d54b9b71f5498783d73f14ad"
+local_aitextflags_ref: "12e17ebfa5f717716f693e44bb6a312189a77bfa"
+local_aitextflags_url: "https://github.com/pekkanikander/moodle-local_aitextflags/archive/12e17ebfa5f717716f693e44bb6a312189a77bfa.zip"
+local_aitextflags_sha256: "abefcf18e3b65e9c7a6d456bed3fa218a7037698d2ca7ba1bafe44b4f0c2e6ed"
 
 # Image used to compile question sources into Moodle XML; see qbank/.
 qbank_tools_base_image: "python:3.13-slim"
