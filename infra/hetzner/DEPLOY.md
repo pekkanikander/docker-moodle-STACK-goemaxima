@@ -87,10 +87,11 @@ On the VM (`ssh moodle-hetzner`), edit `/opt/moodle-stack/.env` (nano or vi):
 - `MOODLE_ADMIN_EMAIL`, `MOODLE_ADMIN_PASSWORD` (real values; the password is
   the actual admin login)
 - `MOODLE_SITE_FULLNAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_NOREPLY_EMAIL`
-- `MOODLE_SMTPHOSTS` (the `.env.example` default sends to the bundled Mailpit
-  capture, which real recipients never see; for real delivery set an
-  authenticated relay, e.g. `smtp.iki.fi:587`, and configure its username and
-  password in the Moodle admin UI under Server > Email > Outgoing mail)
+- Outgoing mail (see "Outgoing mail via smtp.iki.fi" below): the
+  `.env.example` defaults send to the bundled Mailpit capture, which real
+  recipients never see; on the server set `MOODLE_SMTPHOSTS` to a real
+  relay, `MOODLE_SMTPSECURE` accordingly, and `COMPOSE_PROFILES=` (empty,
+  so Mailpit does not run)
 - `MOODLE_LANGPACKS` (e.g. `fi`) and `MOODLE_LANG` (fallback, `en`); `.env.example`
   installs no packs, so this must be set here to get anything but English
 
@@ -101,6 +102,7 @@ cd /opt/moodle-stack
 docker compose --env-file .env.versions --env-file .env up -d
 ./init/scripts/moodle-init.sh      # also sets $CFG->sslproxy for the https wwwroot
 ./init/scripts/lang-init.sh        # language packs + default language
+./init/scripts/mail-init.sh        # noreply address + SMTP target from .env
 ./init/scripts/stack-init.sh
 MOODLE_HTTP_PORT=8000 ./init/scripts/smoke-tests.sh
 ```
@@ -114,6 +116,50 @@ Notes:
 - `lang-init.sh`, unlike `moodle-init.sh`, is safe to rerun at any time. That is
   how an already-installed site gets a language pack: add the code to
   `MOODLE_LANGPACKS` and run it again.
+- `mail-init.sh` is likewise safe to rerun: it applies the mail settings in
+  `.env` (noreply address, SMTP target, transport security) to an installed
+  site.
+
+### Outgoing mail via smtp.iki.fi
+
+The server relays through IKI's authenticated SMTP submission service
+(https://ikiwiki.iki.fi/faq/smtp): DKIM/ARC signing and deliverability are
+IKI's problem, and no MTA runs on the VM. Constraints: the sender must be an
+@iki.fi address owned by the authenticating member (enforced; whether
+`user@member.iki.fi` subdomain forms are accepted is untested), and rate
+limits are 15 messages/minute — far above this site's volume.
+
+1. In the IKI member registry, generate the service-specific SMTP password
+   (*Change Password → Auth SMTP-palvelusalasana*). This is separate from the
+   main member password. Changes activate within an hour.
+
+2. In `/opt/moodle-stack/.env`:
+
+   ```
+   MOODLE_NOREPLY_EMAIL=<member>@iki.fi   # must be IKI-accepted as yours
+   MOODLE_SMTPHOSTS=smtp.iki.fi:587
+   MOODLE_SMTPSECURE=tls
+   COMPOSE_PROFILES=
+   ```
+
+   Then apply: `./init/scripts/mail-init.sh` (and, if Mailpit was running
+   before the profile change,
+   `docker compose --env-file .env.versions --env-file .env up -d
+   --remove-orphans` removes its now-orphaned container).
+
+3. In the Moodle admin UI (*Site administration → Server → Email → Outgoing
+   mail configuration*, `/admin/settings.php?section=outgoingmailconfig`):
+   set *SMTP username* to the IKI member name and *SMTP password* to the
+   service-specific password from step 1. These live in the Moodle database
+   only — never in the repo or `.env` (same policy as the Anthropic API key).
+
+4. Verify with *Site administration → Server → Email → Test outgoing mail
+   configuration* (`/admin/testoutgoingmailconf.php`), sending to a real
+   mailbox. IKI rejections ("Sender address rejected: not owned by user")
+   indicate a noreply/username mismatch with step 2.
+
+Replies to the noreply address land in the member's normal IKI-forwarded
+mailbox; for this site that is a feature, not a bug.
 
 ## 7. Site posture checks (go-live policy)
 

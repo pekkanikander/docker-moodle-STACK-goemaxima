@@ -63,14 +63,23 @@ in `notes/`; feature work done locally, operationalisation pending.
       2026-08-28: `versions.yml` pins the 0.1.0 release, the behaviour
       forks and the companion (by commit SHA); all four are baked into the
       image and smoke-tested, and the dev overlay is no longer needed to
-      run the extension. Remaining: Behat for the student flow, bell-icon
-      notification re-test on the server.
+      run the extension. Bell-icon notification re-tested locally
+      2026-08-28: the flag-for-teacher notification and its email both work
+      (email verified via the Mailpit capture). Remaining: Behat for the
+      student flow, and re-verifying the notification email on staging once
+      real mail delivery is live (see M6).
 
 ## M6 — Operational trust
 
 Before real attempt history accumulates (drilling starts after the current
 content-creation phase, so this fits in the next few weeks):
 
+- [ ] Outgoing email. Done 2026-08-28: Mailpit capture for local/CI (pinned
+      service, smoke-tested mail round-trip), `mail-init.sh` for idempotent
+      mail configuration, staging wired to relay via smtp.iki.fi (no MTA on
+      the VM, no Mailpit there either). Remaining: IKI SMTP credentials in
+      the staging admin UI and an end-to-end delivery test to a real mailbox
+      (`infra/hetzner/DEPLOY.md`, "Outgoing mail via smtp.iki.fi").
 - [ ] Backup security session: a compromised server can poison the dumps the
       MBP pulls, and a restored dump faithfully restores attacker state.
       Topics: append-only MBP copies, baselining/diffing security-relevant
