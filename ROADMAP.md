@@ -47,19 +47,24 @@ in `notes/`; feature work done locally, operationalisation pending.
       behaviour adapter plugins) baked into the image, pinned by commit SHA
       (2.1.0 untagged upstream); architecture note in
       `notes/aitext-extension-architecture.md`. Milestone 2 done 2026-08-27:
-      all five features implemented for the agreed scope on the fork
-      (`pekkanikander/moodle-qtype_aitext`, branch `drilling`) and companion
-      (`pekkanikander/moodle-local_aitextflags`), running locally via the
-      dev overlay (`docker-compose.aitext-dev.yml`); the qbank compiler
-      emits aitext Moodle XML and a golden-test harness
-      (`tools/qbank.sh aitest`) exercises real grading. Deferred by
-      decision (recorded in the task note): scaffold level 0,
+      all five features implemented for the agreed scope on the fork and
+      companion (`pekkanikander/moodle-local_aitextflags`), running locally
+      via the dev overlay (`docker-compose.aitext-dev.yml`); the qbank
+      compiler emits aitext Moodle XML and a golden-test harness
+      (`tools/qbank.sh aitest`) exercises real grading. Hardening done
+      2026-08-28 (PHPUnit both repos, moodle-cs clean, flags-table backup
+      decision recorded in the companion README). The fork has since been
+      renamed into a separate component, `qtype_aitext_rubric`
+      (`pekkanikander/moodle-qtype_aitext_rubric`), released as 0.1.0; it
+      requires the two behaviour forks
+      `pekkanikander/moodle-qbehaviour_{immediate,deferred}_for_aitext`.
+      Deferred by decision (recorded in the task note): scaffold level 0,
       `double_run`/`fuzz`, dynamic scaffold level. Remaining to close:
-      hardening (PHPUnit, moodle-cs, flags-table backup decision) and
-      operationalisation — repoint `versions.yml` to a fork SHA, bake the
-      companion into the image, drop the dev overlay from the deploy path.
-      Until then CI and the server run the *upstream* plugin, which would
-      silently drop rubric/scaffold fields on qbank import.
+      operationalisation — repoint `versions.yml` to the 0.1.0 release and
+      the behaviour forks, bake the companion into the image, drop the dev
+      overlay from the deploy path. Until then CI and the server run the
+      upstream `qtype_aitext`, and the compiler's `aitext_rubric` XML will
+      not import there.
 
 ## M6 — Operational trust
 
@@ -104,8 +109,8 @@ content-creation phase, so this fits in the next few weeks):
 
 - `oivus-questions` (sibling repo) — question content; its `NOW.md` tracks
   content work.
-- `moodle-qtype_aitext` and `moodle-local_aitextflags` (sibling repos) — the
-  TASK-02 fork and its companion plugin.
+- `moodle-qtype_aitext_rubric` and `moodle-local_aitextflags` (sibling
+  repos) — the TASK-02 question type and its companion plugin.
 - `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
 - `infra/BACKUP.md` — backup/restore architecture and runbooks.
 - `notes/` — task briefs for upcoming work (TASK-01, TASK-02).

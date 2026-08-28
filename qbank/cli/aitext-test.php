@@ -9,7 +9,7 @@
 
 require_once(__DIR__ . '/lib.php');
 
-require_once($CFG->dirroot . '/question/type/aitext/question.php');
+require_once($CFG->dirroot . '/question/type/aitext_rubric/question.php');
 
 $usage = "Run aitext golden tests through the real AI grading pipeline.
 
@@ -65,7 +65,7 @@ foreach ($specfiles as $specfile) {
 
         // A fresh question instance per test: grade_response() caches
         // results on the object.
-        $question = new qtype_aitext_question();
+        $question = new qtype_aitext_rubric_question();
         $question->id = 0;
         $question->questiontext = $spec->stem_html;
         $question->questiontextformat = FORMAT_HTML;

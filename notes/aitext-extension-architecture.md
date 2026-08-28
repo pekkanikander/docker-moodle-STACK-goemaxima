@@ -4,7 +4,8 @@
 > implemented (Feature 2 at levels 1+2 only; level 0, `double_run` and
 > `fuzz` deferred by decision — see the task note for status and parked
 > ideas). Kept for the extension-point map and the fork/companion split
-> rationale.
+> rationale. The fork has since been renamed into a separate component,
+> `qtype_aitext_rubric` (`pekkanikander/moodle-qtype_aitext_rubric`).
 
 Source read: `marcusgreen/moodle-qtype_aitext` @ c45b8d2 (v2.1.0, unreleased —
 35 commits past the last tag v2.03), plus `qbehaviour_deferred_for_aitext` and

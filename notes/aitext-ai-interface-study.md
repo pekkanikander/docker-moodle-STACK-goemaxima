@@ -3,9 +3,11 @@
 Audience: someone fluent in systems programming who has never written PHP and
 has never called an LLM through an API. This traces one student answer from
 submission to feedback, naming every file on the way so the source can be read
-in order. Paths marked *(fork)* are in `../moodle-qtype_aitext` (branch
-`drilling`); paths marked *(container)* are inside the running `moodle`
-container under `/var/www/html/public/`.
+in order. Paths marked *(fork)* are in `../moodle-qtype_aitext_rubric`
+(since renamed into the separate component `qtype_aitext_rubric`; class
+names in this note keep the old `qtype_aitext` prefix); paths marked
+*(container)* are inside the running `moodle` container under
+`/var/www/html/public/`.
 
 ## 0. PHP in ten lines, for a C programmer
 

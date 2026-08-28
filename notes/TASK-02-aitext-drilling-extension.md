@@ -150,13 +150,18 @@ rubric→mark derivation and JSON-failure path covered by the fork's
 `tests/rubric_test.php`; flag lifecycle by the companion's
 `tests/api_test.php`; fuzz determinism N/A while `fuzz` stays deferred.
 Behat for the student flow: TODO. moodle-cs: companion clean; the fork's
-changed files have 26 findings (24 phpcbf-autofixable) in `renderer.php`,
-`classes/local/rubric.php` and `tests/rubric_test.php` — left for the
-fork rename/split to pick up. Prompt text currently lives in the fork's
-rubric class rather than standalone template files — accepted deviation,
-revisit if prompts start churning. Test runs (2026-08-28, ephemeral
-PHPUnit setup in the local container): companion suite passes; fork
-suite 99/100 — see Known issues.
+findings were fixed during the rename (fork CI green). Prompt text
+currently lives in the fork's rubric class rather than standalone
+template files — accepted deviation, revisit if prompts start churning.
+Test runs (2026-08-28, ephemeral PHPUnit setup in the local container):
+companion suite passes; the fork suite's single failure was a test typo,
+fixed in the rename.
+
+**Rename (2026-08-28):** the fork is now a separate component,
+`qtype_aitext_rubric` (`pekkanikander/moodle-qtype_aitext_rubric`,
+release 0.1.0), with weekly upstream merges; it requires the behaviour
+forks `pekkanikander/moodle-qbehaviour_{immediate,deferred}_for_aitext`
+because upstream's behaviour adapters are tied to `qtype_aitext`.
 
 ## Suggested order of work
 
@@ -174,10 +179,6 @@ code.
 
 ## Known issues (return to these)
 
-- Fork `tests/rubric_test.php:214` has an assertion typo: `criteria[1]`
-  (two-level criterion at its top level) correctly gets
-  `nextdescriptor === null`; the line should assert `->descriptor`.
-  Production code verified correct; fix in the fork.
 - Flag notification does not appear in the bell icon (observed 2026-08-27,
   local manual test). The `notifications` table row is created with correct
   content, so `message_send()` works; the bell UI reads

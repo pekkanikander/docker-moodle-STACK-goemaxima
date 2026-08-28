@@ -293,7 +293,7 @@ def load_aitext_question(path: Path, source: dict) -> dict:
     """Validate an aitext drilling question and return its spec.
 
     The spec is written twice: as an eval spec (JSON under <out>/aitext/)
-    carrying the rubric in the exact shape the qtype_aitext fork stores it
+    carrying the rubric in the exact shape qtype_aitext_rubric stores it
     plus the golden tests for the evaluation harness (qbank/cli/
     aitext-test.php), and as Moodle XML under <out>/questions/ for import.
     """
@@ -378,7 +378,7 @@ def load_aitext_question(path: Path, source: dict) -> dict:
         # An authored skeleton turns the visible-scaffold level on (Feature 2);
         # purely presentational, the grading pipeline never sees it.
         "scaffold_html": to_html(scaffold) if scaffold else "",
-        # The rubric column of the qtype_aitext fork, verbatim.
+        # The rubric column of qtype_aitext_rubric, verbatim.
         "rubric": {
             "language": str(source["language"]),
             "display": grading,
@@ -400,7 +400,7 @@ def render_aitext_question(spec: dict) -> str:
     """Moodle XML for an aitext question, mirroring qbank/cli/aitext-test.php:
     the grading context becomes the aiprompt, the rubric JSON goes in
     verbatim, and the markscheme stays empty so grading takes the rubric
-    path. The element names are the fork's extra_question_fields()."""
+    path. The element names are qtype_aitext_rubric's extra_question_fields()."""
     tags = ""
     if spec["tags"]:
         items = "".join(f"      <tag><text>{escape(tag)}</text></tag>\n" for tag in spec["tags"])
@@ -419,7 +419,7 @@ def render_aitext_question(spec: dict) -> str:
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         "<quiz>\n"
-        '  <question type="aitext">\n'
+        '  <question type="aitext_rubric">\n'
         f"    <name>\n      <text>{escape(spec['name'])}</text>\n    </name>\n"
         + text_element("questiontext", spec["stem_html"])
         + text_element("generalfeedback", spec["feedback_html"])

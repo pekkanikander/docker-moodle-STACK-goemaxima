@@ -200,8 +200,9 @@ the student must commit to a reading first.
 
 A file with `type: aitext` is an explanation question graded by an LLM
 against a criterion rubric, not by Maxima. The design and its rationale are
-in `notes/aitext-rubric-design.md`; the grading pipeline is our fork of
-`qtype_aitext`. Each source compiles to two artefacts: Moodle XML under
+in `notes/aitext-rubric-design.md`; the grading pipeline is our
+`qtype_aitext_rubric` plugin (a fork of `qtype_aitext`). Each source
+compiles to two artefacts: Moodle XML under
 `questions/` for import (quizzes may reference aitext questions like any
 other), and an eval spec under `aitext/` for the golden-test harness
 (`tools/qbank.sh aitest`).

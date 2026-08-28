@@ -1,4 +1,4 @@
-# AI-graded explanation question (qtype_aitext + rubric); the format is
+# AI-graded explanation question (qtype_aitext_rubric); the format is
 # described in qbank/README.md, the design in notes/aitext-rubric-design.md.
 # Exercises: 3-level criteria, a strict 2-level criterion, borderline
 # expectations as lists, and a nonsense-answer pipeline check.

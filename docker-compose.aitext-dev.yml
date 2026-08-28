@@ -1,8 +1,8 @@
-# Development overlay: mount the qtype_aitext fork working copy over the
-# plugin baked into the image, for the inner dev loop of the drilling
+# Development overlay: mount the qtype_aitext_rubric and local_aitextflags
+# working copies into the image, for the inner dev loop of the drilling
 # extension (see notes/aitext-extension-architecture.md). Not for CI or
-# the server; versions.yml pins move to fork commit SHAs at commit
-# boundaries instead.
+# the server; versions.yml pins move to release tags / commit SHAs at
+# commit boundaries instead.
 #
 # Usage:
 #   docker compose --env-file .env.versions --env-file .env \
@@ -11,9 +11,9 @@
 services:
   moodle:
     volumes:
-      - ../moodle-qtype_aitext:/var/www/html/public/question/type/aitext:ro
+      - ../moodle-qtype_aitext_rubric:/var/www/html/public/question/type/aitext_rubric:ro
       - ../moodle-local_aitextflags:/var/www/html/public/local/aitextflags:ro
   moodle-cron:
     volumes:
-      - ../moodle-qtype_aitext:/var/www/html/public/question/type/aitext:ro
+      - ../moodle-qtype_aitext_rubric:/var/www/html/public/question/type/aitext_rubric:ro
       - ../moodle-local_aitextflags:/var/www/html/public/local/aitextflags:ro
