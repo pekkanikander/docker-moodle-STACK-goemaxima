@@ -32,7 +32,7 @@ and are what CI runs.
 | `compile` | YAML → `${QBANK_BUILD_DIR:-.generated/qbank}`, in the `qbank-tools` container |
 | `import`  | XML → question bank activity, in the `moodle` container |
 | `quizzes` | quiz specs → quiz activities |
-| `test`    | STACK's `bulktestall.php`, i.e. every question's own tests through Maxima |
+| `test`    | STACK's `bulktestall.php` (every question's own tests through Maxima), then the figure render gate |
 | `all`     | all four, in that order |
 
 Course and bank are taken from `QBANK_COURSE` and `QBANK_BANK` env vars
@@ -173,6 +173,75 @@ chooses the unit; the prompt should then say so.
 Randomised questions must list `seeds:`. Without deployed seeds a question has
 no fixed set of variants and its tests only ever exercise whichever one comes
 up, so `tools/qbank.sh test` would not be a real gate.
+
+## Figures
+
+A question may carry one figure, in the stem, written as a `figure:` block.
+
+(Note: the prose fields pass HTML and CASText through untouched, so a
+`{@plot(...)@}`, an `<img>` or an `<svg>` written there would reach STACK with
+no alt text and outside the render gate. The compiler refuses all three.)
+
+Two kinds, and the difference decides which key to use:
+
+```yaml
+figure:                                  # a graph: STACK's plot() draws it
+  alt: |
+    Matka-aikakuvaaja: origosta lähtevä nouseva suora.
+  plot: |
+    [[discrete, [[0, 0], [tloppu, sloppu]]]],
+    [x, 0, tloppu], [y, 0, sloppu],
+    [xlabel, "aika (s)"], [ylabel, "matka (m)"]
+```
+
+```yaml
+figure:                                  # a schematic: a file in the content repo
+  alt: |
+    Virtapiirin kaaviokuva: paristo ja kaksi vastusta R1 ja R2 samassa
+    silmukassa peräkkäin.
+  svg: kuvat/virtapiiri-sarja.svg        # relative to the content root
+```
+
+`alt:` is required, in Finnish, and is prose: it cannot interpolate variables,
+because a plot's alt text is a Maxima string inside a CASText block. STACK's
+own default is an English dump of the plotted expression, which is worse than
+nothing.
+
+**`plot:` is for a figure that carries the variant's numbers.** Everything
+inside it comes from `variables:`: a decimal number, or a constant that
+`variables:` also defines, is refused. If the picture and the prose can
+disagree, the student who reads the picture correctly is marked wrong. The
+contents are the arguments of STACK's `plot()`, minus the alt text, which the
+compiler adds; the permitted options are STACK's (`stackmaxima.mac`), and more
+than two variables is a Maxima error.
+
+Axis ticks are written with a decimal comma. The compiler appends `set
+decimalsign ","` to `PLOT_TERM_OPT` in any question with a plot, which is the
+only hook a question has into gnuplot's preamble; `figure-test.php` fails if a
+tick label comes back with a decimal point anyway.
+
+**`svg:` is for a static diagram** — circuits, ray paths — that gnuplot cannot
+draw. The rule that makes this work is a content rule: **labels in the figure,
+numbers in the prose.** A circuit drawn with `R1`, `R2` and `U`, with the
+values given in the stem, is what an exam paper does anyway, and it makes the
+diagram the same for every variant. The SVG is embedded in the question XML as
+base64 and referenced through `@@PLUGINFILE@@`, so Moodle serves it from its
+own file store; the content repo holds text, never a binary. An SVG containing
+a script, an event handler, an external reference or an entity declaration is
+refused: an exam page fetches nothing, and a diagram that quietly fails to
+load breaks a question in a way the student cannot diagnose.
+
+A plot file is a per-render artefact. STACK names it with `rand(10^8)` and
+writes it into `$CFG->dataroot/stack/plots`, so nothing about it can be pinned
+in advance and the gate is a render instead: `qbank/cli/figure-test.php`, run
+by `tools/qbank.sh test`, renders every figure question at every deployed seed
+and checks that each image exists, is a non-empty SVG and has alt text. It
+cannot check that the figure is *right*; that stays a preview step.
+
+The plot filename is cached in the CAS result cache, which outlives the file:
+if `$CFG->dataroot/stack/plots` is ever cleared, clear the CAS cache too
+(`question/type/stack/cli/clearcascache.php`, which `stack-init.sh` runs), or
+questions will point at images that are gone. The figure gate catches this.
 
 ## Interpretation scaffolding
 

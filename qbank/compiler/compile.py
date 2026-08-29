@@ -12,6 +12,7 @@ Run inside the qbank-tools container; see tools/qbank.sh.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -74,6 +75,53 @@ AITEXT_GRADINGS = ("none", "coarse", "fine")
 # has changed; without that, a new commit would re-import every question and
 # create a meaningless Moodle version for each.
 PROVENANCE_TAG_PREFIX = "src-"
+
+# Figures. A data-bearing figure is a STACK plot() call written as its Maxima
+# argument list; a schematic is an SVG file from the content repo, embedded
+# into the XML as base64 so that the content author never handles a binary.
+#
+# Gnuplot writes axis ticks with a decimal point, and a graph whose axis reads
+# "2.5" beside prose reading "2,5" is exactly the inconsistency this project
+# exists to remove. STACK splices PLOT_TERM_OPT verbatim into gnuplot's "set
+# terminal" line, which is the only hook a question has into the plot
+# preamble; appending a command there reaches gnuplot intact. Read the site
+# value rather than restating it, so the font and line width stay whatever the
+# Maxima image was built with.
+DECIMAL_COMMA = (
+    'PLOT_TERM_OPT : sconcat(PLOT_TERM_OPT, ascii(10), "set decimalsign \\",\\"");'
+)
+
+# Names a plot expression may use besides the question's own variables: the
+# plot forms and options STACK permits (stackmaxima.mac, permitted_options),
+# the axis variables, and the Maxima functions a school-physics graph needs.
+FIGURE_NAMES = frozenset("""
+    x y t discrete parametric contour minus plus
+    xlabel ylabel label legend levels color style point_type nticks
+    logx logy axes box plot_realpart yx_ratio xtics ytics ztics adapt_depth
+    plotepsilon xy_scale same_xy sample margin size plottags true false
+    sin cos tan asin acos atan sqrt exp log abs min max floor ceiling round
+    if then else and or not
+""".split())
+
+# An SVG is text, but not everything text can do belongs in an exam page: a
+# script or an external reference turns a figure into a fetch the student's
+# browser makes mid-exam, and a diagram that silently fails to load breaks a
+# question in a way the student cannot diagnose.
+SVG_FORBIDDEN = (
+    (re.compile(r"<script", re.I), "a <script> element"),
+    (re.compile(r"\son[a-z]+\s*=", re.I), "an inline event handler"),
+    (re.compile(r"""["'(]\s*(?:https?:)?//""", re.I), "an external reference"),
+    (re.compile(r"<!ENTITY", re.I), "an entity declaration"),
+)
+
+# Ways to put a figure into a question that would bypass the checks above:
+# the prose fields pass CASText, LaTeX and HTML through untouched, so each of
+# these would reach STACK with no alt text and outside the rendering gate.
+PROSE_FORBIDDEN = (
+    ("{@plot(", "a plot() call"),
+    ("<img", "an <img> element"),
+    ("<svg", "an <svg> element"),
+)
 
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
@@ -147,6 +195,17 @@ class Reading:
 
 
 @dataclass
+class Figure:
+    alt: str
+    plot: str = ""
+    svg: Path | None = None
+
+    @property
+    def filename(self) -> str:
+        return self.svg.name if self.svg else ""
+
+
+@dataclass
 class Question:
     path: Path
     id: str
@@ -155,6 +214,7 @@ class Question:
     variables: str
     stem: str
     answer: dict
+    figure: Figure | None = None
     scaffold: str = "none"
     interpretation: dict | None = None
     readings: list[Reading] = field(default_factory=list)
@@ -212,11 +272,114 @@ def element(name: str, value) -> str:
     return f"    <{name}>{value}</{name}>\n"
 
 
-def text_element(name: str, html: str, indent: str = "    ") -> str:
-    return f'{indent}<{name} format="html">\n{indent}  <text>{cdata(html)}</text>\n{indent}</{name}>\n'
+def text_element(name: str, html: str, indent: str = "    ", files: str = "") -> str:
+    return (f'{indent}<{name} format="html">\n{indent}  <text>{cdata(html)}</text>\n'
+            f'{files}{indent}</{name}>\n')
 
 
-def load_question(path: Path, source: dict) -> Question:
+def assigned_names(variables: str) -> list[str]:
+    """The variable names a Maxima 'variables:' block assigns."""
+    return re.findall(r"(?:^|;)\s*([A-Za-z][A-Za-z0-9_]*)\s*:", variables, re.M)
+
+
+def check_prose(path: Path, field: str, text: str) -> None:
+    """Refuse a figure smuggled into a prose field.
+
+    Prose passes through untouched, so a figure written there would carry no
+    alt text and would never be seen by the rendering gate. Figures go in
+    'figure:', which is checked.
+    """
+    lowered = str(text).lower()
+    for marker, what in PROSE_FORBIDDEN:
+        if marker in lowered:
+            fail(path, f"'{field}' contains {what}; figures belong in 'figure:'")
+
+
+def load_figure(path: Path, source: dict, sourceroot: Path) -> Figure | None:
+    figure = source.get("figure")
+    if not figure:
+        return None
+    if not isinstance(figure, dict):
+        fail(path, "'figure' must be a mapping")
+
+    unknown = set(figure) - {"alt", "plot", "svg"}
+    if unknown:
+        fail(path, f"figure has unknown key(s): {', '.join(sorted(unknown))}")
+
+    # STACK's default alt text is an English dump of the Maxima expression,
+    # which is worse than none. There is no default here.
+    alt = " ".join(str(figure.get("alt", "")).split())
+    if not alt:
+        fail(path, "'figure.alt' is required: describe the figure in Finnish")
+    # A plot's alt text is a Maxima string inside a CASText block, where a
+    # nested {@...@} does not survive the parse. Rather than let alt mean one
+    # thing for a graph and another for a schematic, it is prose in both.
+    if "{@" in alt:
+        fail(path, "'figure.alt' cannot interpolate variables; describe the "
+                   "figure, and put the numbers in the stem")
+
+    if bool(figure.get("plot")) == bool(figure.get("svg")):
+        fail(path, "figure needs exactly one of 'plot' (a graph) or 'svg' (a schematic)")
+
+    if figure.get("plot"):
+        plot = " ".join(str(figure["plot"]).split())
+        check_plot(path, plot, str(source.get("variables", "")))
+        return Figure(alt=alt, plot=plot)
+
+    return Figure(alt=alt, svg=resolve_svg(path, str(figure["svg"]), sourceroot))
+
+
+def check_plot(path: Path, plot: str, variables: str) -> None:
+    """A plot draws the variant's numbers, so it must read them from
+    'variables:' rather than repeat them. A repeated constant is a grading
+    defect waiting to happen: the student reads the picture correctly and is
+    marked wrong. Neither a decimal number nor a constant the variables
+    already define may appear in the plot."""
+    # Labels are prose; nothing inside them is a value or a variable name.
+    bare = re.sub(r'"[^"]*"', '""', plot)
+
+    if re.search(r"\d*\.\d+|\d+\.\d*", bare):
+        fail(path, "'figure.plot' contains a decimal number; "
+                   "plotted values must come from 'variables:'")
+
+    known = set(assigned_names(variables)) | FIGURE_NAMES
+    used = {name for name in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", bare)}
+    unknown = sorted(used - known)
+    if unknown:
+        fail(path, "'figure.plot' uses name(s) not defined in 'variables:': "
+                   + ", ".join(unknown))
+
+    # 0 and 1 are structure (an origin, a unit step), not measurements.
+    constants = {n for n in re.findall(r"\b\d+\b", re.sub(r'"[^"]*"', '""', variables))}
+    repeated = sorted({n for n in re.findall(r"\b\d+\b", bare)} & constants - {"0", "1"})
+    if repeated:
+        fail(path, "'figure.plot' repeats constant(s) from 'variables:': "
+                   + ", ".join(repeated) + "; name them instead")
+
+
+def resolve_svg(path: Path, name: str, sourceroot: Path) -> Path:
+    """Locate a schematic in the content repository and refuse an unsafe one."""
+    if name.startswith("/"):
+        fail(path, f"'figure.svg' must be relative to the content root: {name}")
+    target = (sourceroot / name).resolve()
+    if not target.is_relative_to(sourceroot.resolve()):
+        fail(path, f"'figure.svg' points outside the content root: {name}")
+    if target.suffix != ".svg":
+        fail(path, f"'figure.svg' must be an .svg file: {name}")
+    if not target.is_file():
+        fail(path, f"'figure.svg' not found: {name}")
+
+    # Namespace declarations are URLs that are never fetched; everything else
+    # that looks like a URL is a fetch the student's browser would make.
+    content = re.sub(r'xmlns(:\w+)?\s*=\s*"[^"]*"', "", target.read_text(encoding="utf-8"))
+    for pattern, what in SVG_FORBIDDEN:
+        if pattern.search(content):
+            fail(path, f"'figure.svg' {name} contains {what}")
+
+    return target
+
+
+def load_question(path: Path, source: dict, sourceroot: Path) -> Question:
     qid = str(require(path, source, "id"))
     if not ID_RE.match(qid):
         fail(path, f"id '{qid}' must be lowercase kebab-case")
@@ -267,9 +430,7 @@ def load_question(path: Path, source: dict) -> Question:
     if readings and "quantity" not in answer:
         fail(path, "'answer.quantity' must name the symbol the readings stand for")
     if answer.get("type") == "units":
-        assigned = re.findall(
-            r"(?:^|;)\s*([A-Za-z][A-Za-z0-9_]*)\s*:", str(source.get("variables", "")), re.M
-        )
+        assigned = assigned_names(str(source.get("variables", "")))
         shadowed = [n for n in assigned + [str(answer.get("quantity", ""))] if n in UNIT_NAMES]
         if shadowed:
             fail(path, "variable(s) shadow STACK unit names in a units question: "
@@ -279,6 +440,14 @@ def load_question(path: Path, source: dict) -> Question:
     if scaffold == "stated" and not interpretation.get("stated_prefix"):
         fail(path, "scaffold 'stated' requires 'interpretation.stated_prefix'")
 
+    check_prose(path, "stem", source["stem"])
+    check_prose(path, "feedback", source.get("feedback", ""))
+    check_prose(path, "answer.prompt", answer["prompt"])
+    for key in ("prompt", "stated_prefix"):
+        check_prose(path, f"interpretation.{key}", (interpretation or {}).get(key, ""))
+    for reading in readings:
+        check_prose(path, f"reading '{reading.key}'", reading.label + reading.why)
+
     return Question(
         path=path,
         id=qid,
@@ -287,6 +456,7 @@ def load_question(path: Path, source: dict) -> Question:
         variables=str(source.get("variables", "")).strip(),
         stem=str(require(path, source, "stem")),
         answer=answer,
+        figure=load_figure(path, source, sourceroot),
         scaffold=scaffold,
         interpretation=interpretation,
         readings=readings,
@@ -487,11 +657,35 @@ def question_variables(question: Question) -> str:
     parts = [question.variables, answer_expressions(question)]
     if question.scaffold == "choice":
         parts.append(dropdown_teacher_answer(question))
+    if question.figure and question.figure.plot:
+        parts.append(DECIMAL_COMMA)
     return "\n".join(part for part in parts if part)
+
+
+def figure_html(figure: Figure) -> str:
+    """The figure as it appears in the stem: a plot() call STACK evaluates
+    against the question's variables, or an <img> pointing at the embedded
+    schematic. The alt text is the author's in both cases."""
+    if figure.plot:
+        # plot() returns its own <div>, so it is not wrapped in a paragraph.
+        return "{@plot(" + figure.plot + ", [alt, " + maxima_string(figure.alt) + "])@}"
+    return f'<p><img src="@@PLUGINFILE@@/{figure.filename}" alt="{escape(figure.alt)}" /></p>'
+
+
+def figure_file_element(figure: Figure) -> str:
+    """The schematic itself, base64 in the XML, so the content repository
+    holds text and the importer needs nothing beside the .xml file."""
+    if not figure.svg:
+        return ""
+    encoded = base64.b64encode(figure.svg.read_bytes()).decode("ascii")
+    return f'      <file name="{escape(figure.filename)}" path="/" encoding="base64">{encoded}</file>\n'
 
 
 def stem_html(question: Question) -> str:
     parts = [to_html(question.stem)]
+
+    if question.figure:
+        parts.append(figure_html(question.figure))
 
     if question.scaffold == "stated":
         intended = next(r for r in question.readings if r.intended)
@@ -831,7 +1025,8 @@ def render_question(question: Question, stackversion: str) -> str:
         "<quiz>\n"
         '  <question type="stack">\n'
         f"    <name>\n      <text>{escape(question.name)}</text>\n    </name>\n"
-        + text_element("questiontext", stem_html(question))
+        + text_element("questiontext", stem_html(question),
+                       files=figure_file_element(question.figure) if question.figure else "")
         + text_element("generalfeedback", to_html(question.general_feedback) if question.general_feedback else "")
         + element("defaultgrade", f"{question.grade:g}")
         + element("penalty", f"{question.penalty:g}")
@@ -899,14 +1094,26 @@ def load_quiz(path: Path, source: dict) -> dict:
     return quiz
 
 
-def manifest_entry(qid: str, path: Path, sourceroot: Path, target: Path, out: Path) -> dict:
-    """One question's line in the build manifest: where it came from."""
-    return {
+def manifest_entry(qid: str, path: Path, sourceroot: Path, target: Path, out: Path,
+                   figure: Figure | None = None) -> dict:
+    """One question's line in the build manifest: where it came from.
+
+    A schematic is part of the source even though it lives in its own file, so
+    it is listed too; without that, editing an SVG would change the question
+    Moodle stores and nothing in the manifest would say so.
+    """
+    entry = {
         "id": qid,
         "source": str(path.relative_to(sourceroot)),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "xml": str(target.relative_to(out)),
     }
+    if figure and figure.svg:
+        entry["assets"] = [{
+            "source": str(figure.svg.relative_to(sourceroot.resolve())),
+            "sha256": hashlib.sha256(figure.svg.read_bytes()).hexdigest(),
+        }]
+    return entry
 
 
 def provenance_tag(commit: str, dirty: bool) -> str:
@@ -937,7 +1144,7 @@ def compile_tree(source: Path, out: Path, stackversion: str, provenance: dict) -
             continue
         if qtype != "stack":
             fail(path, f"unknown question type '{qtype}'")
-        question = load_question(path, data)
+        question = load_question(path, data, source)
         if question.id in questions or question.id in aitext:
             fail(path, f"id '{question.id}' already in use")
         questions[question.id] = question
@@ -961,7 +1168,8 @@ def compile_tree(source: Path, out: Path, stackversion: str, provenance: dict) -
         target.parent.mkdir(parents=True, exist_ok=True)
         question.tags.append(tag)
         target.write_text(render_question(question, stackversion), encoding="utf-8")
-        imported.append(manifest_entry(question.id, sources[question.id], source, target, out))
+        imported.append(manifest_entry(question.id, sources[question.id], source, target, out,
+                                       question.figure))
 
     if quizzes:
         quizdir = out / "quizzes"

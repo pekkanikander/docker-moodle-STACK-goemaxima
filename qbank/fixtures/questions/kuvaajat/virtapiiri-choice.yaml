@@ -1,0 +1,48 @@
+id: fixture-virtapiiri-choice
+name: "Fixture: sarjaan vai rinnan kytketyt vastukset (valitaan tulkinta)"
+category: [Testi, Kuvaajat]
+tags: [fixture, kaaviokuva, tulkinta, scaffold-choice]
+scaffold: choice
+
+seeds: [801, 802, 803]
+
+variables: |
+  r1 : rand([10, 20, 30]);
+  r2 : rand([40, 60]);
+
+figure:
+  alt: |
+    Virtapiirin kaaviokuva: paristo ja kaksi vastusta R1 ja R2 samassa
+    silmukassa peräkkäin.
+  svg: kuvat/virtapiiri-sarja.svg
+
+stem: |
+  Kuvan piirissä vastuksen R1 resistanssi on {@r1@} ohmia ja vastuksen R2
+  resistanssi on {@r2@} ohmia.
+
+interpretation:
+  weight: 0.4
+  prompt: |
+    Miten vastukset on kytketty kuvan piirissä?
+  readings:
+    - key: sarjaan
+      label: "vastukset ovat sarjassa"
+      value: r1 + r2
+      intended: true
+      why: "Aivan: virralla on vain yksi reitti, joten vastukset ovat sarjassa ja resistanssit lasketaan yhteen."
+    - key: rinnan
+      label: "vastukset ovat rinnan"
+      value: r1 * r2 / (r1 + r2)
+      why: "Rinnankytkennässä virta jakautuisi kahdelle eri reitille. Kuvassa on vain yksi silmukka, joten vastukset ovat peräkkäin samalla reitillä."
+
+answer:
+  type: numerical
+  quantity: R
+  formula: R
+  prompt: "Laske piirin kokonaisresistanssi valitsemasi tulkinnan mukaan. Vastaa ohmeina."
+  boxsize: 8
+
+feedback: |
+  Kuvassa virralla on vain yksi reitti pariston navalta toiselle, joten
+  vastukset ovat sarjassa ja kokonaisresistanssi on
+  {@r1@} &ohm; + {@r2@} &ohm; = {@r1 + r2@} &ohm;.

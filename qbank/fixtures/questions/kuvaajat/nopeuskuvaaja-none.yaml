@@ -1,0 +1,48 @@
+id: fixture-nopeuskuvaaja-none
+name: "Fixture: nopeuskuvaajan pinta-ala (ei tukea)"
+category: [Testi, Kuvaajat]
+tags: [fixture, kuvaaja, tulkinta, scaffold-none]
+scaffold: none
+
+seeds: [701, 702, 703]
+
+variables: |
+  nopeus : rand([3, 5, 7]);
+  tloppu : 4;
+  matka  : nopeus * tloppu;
+
+figure:
+  alt: |
+    Nopeus-aikakuvaaja: vaakasuora jana, eli nopeus pysyy koko ajan samana.
+    Vaaka-akselilla on aika sekunteina ja pystyakselilla nopeus metreinä
+    sekunnissa.
+  plot: |
+    [[discrete, [[0, nopeus], [tloppu, nopeus]]]],
+    [x, 0, tloppu], [y, 0, nopeus + 1],
+    [xlabel, "aika (s)"], [ylabel, "nopeus (m/s)"]
+
+stem: |
+  Kuvaaja esittää kappaleen liikettä.
+
+interpretation:
+  readings:
+    - key: pintaala
+      label: "matka on kuvaajan ja aika-akselin väliin jäävä pinta-ala"
+      value: nopeus * tloppu
+      intended: true
+    - key: luettu
+      label: "matka on kuvaajalta luettu arvo"
+      value: nopeus
+      why: "Luit kuvaajalta nopeuden {@nopeus@} m/s. Matkaa ei lueta nopeuskuvaajalta suoraan, vaan se on kuvaajan alle jäävä pinta-ala."
+
+answer:
+  type: numerical
+  quantity: s
+  formula: s
+  prompt: "Kuinka pitkän matkan kappale kulkee {@tloppu@} sekunnissa? Vastaa metreinä."
+  boxsize: 8
+
+feedback: |
+  Nopeus on koko ajan {@nopeus@} m/s, joten {@tloppu@} sekunnissa kuljettu
+  matka on {@nopeus@} m/s &middot; {@tloppu@} s = {@matka@} m.
+  Kuvaajassa tämä on suoran alle jäävän suorakulmion pinta-ala.

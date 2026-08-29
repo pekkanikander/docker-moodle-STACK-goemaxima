@@ -69,6 +69,29 @@ in `notes/`; feature work done locally, operationalisation pending.
       student flow, and re-verifying the notification email on staging once
       real mail delivery is live (see M6).
 
+## Question-bank capability
+
+What a question can be made of, beyond the interpretation ladder that M4 left
+in place. Briefs in `notes/`.
+
+- [ ] TASK-03 (`notes/TASK-03-drilling-mode.md`): drilling mode — hints and
+      worked steps faded across attempts, as a second axis beside the
+      interpretation ladder.
+- [x] TASK-04 (`notes/TASK-04-figures.md`): done 2026-08-29. Questions can
+      carry a figure: `figure.plot` for a graph STACK draws from the
+      question's own variables (no constant may be repeated from
+      `variables:`, and axis ticks get a decimal comma via `PLOT_TERM_OPT`),
+      `figure.svg` for a static schematic embedded into the question XML as
+      base64 and served through `@@PLUGINFILE@@`. Alt text is mandatory and
+      in Finnish; writing a figure into the prose instead is refused.
+      `qbank/cli/figure-test.php` renders every figure question at every
+      deployed seed and checks the images exist, wired into
+      `tools/qbank.sh test`. Prerequisite bug fixed on the way: STACK's
+      `$CFG->dataroot/stack` directories are never created in server mode, so
+      every CAS-generated plot was silently dropped on arrival;
+      `stack-init.sh` creates them and clears the CAS cache, and
+      `smoke-tests.sh` asserts they are writable.
+
 ## M6 — Operational trust
 
 Before real attempt history accumulates (drilling starts after the current
@@ -133,4 +156,4 @@ content-creation phase, so this fits in the next few weeks):
   repos) — the TASK-02 question type and its companion plugin.
 - `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
 - `infra/BACKUP.md` — backup/restore architecture and runbooks.
-- `notes/` — task briefs for upcoming work (TASK-01, TASK-02, TASK-05).
+- `notes/` — task briefs for upcoming work (TASK-01 to TASK-05).

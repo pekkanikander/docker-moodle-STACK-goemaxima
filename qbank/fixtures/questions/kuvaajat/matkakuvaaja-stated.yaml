@@ -1,0 +1,51 @@
+id: fixture-matkakuvaaja-stated
+name: "Fixture: matka-aikakuvaajan kulmakerroin (tulkinta annettu)"
+category: [Testi, Kuvaajat]
+tags: [fixture, kuvaaja, tulkinta, scaffold-stated]
+scaffold: stated
+
+seeds: [601, 602, 603]
+
+variables: |
+  nopeus : rand([4, 6, 8]);
+  tloppu : 5;
+  sloppu : nopeus * tloppu;
+
+figure:
+  alt: |
+    Matka-aikakuvaaja: origosta lähtevä nouseva suora. Vaaka-akselilla on
+    aika sekunteina ja pystyakselilla kuljettu matka metreinä.
+  plot: |
+    [[discrete, [[0, 0], [tloppu, sloppu]]]],
+    [x, 0, tloppu], [y, 0, sloppu],
+    [xlabel, "aika (s)"], [ylabel, "matka (m)"]
+
+stem: |
+  Kuvaaja esittää kappaleen liikettä.
+
+interpretation:
+  stated_prefix: "Tässä tehtävässä käytetään tulkintaa:"
+  readings:
+    - key: kulmakerroin
+      label: "nopeus on kuvaajan kulmakerroin"
+      value: sloppu / tloppu
+      intended: true
+      why: "Nopeus on matkan muutos jaettuna ajalla: {@sloppu@} m / {@tloppu@} s = {@sloppu / tloppu@} m/s."
+    - key: loppuarvo
+      label: "nopeus on kuvaajan viimeinen arvo"
+      value: sloppu
+      why: "Kuvaajan viimeinen arvo {@sloppu@} on <em>matka</em> metreinä, ei nopeus. Pystyakselin otsikko kertoo, mitä suuretta kuvaajalta luetaan."
+
+answer:
+  type: numerical
+  quantity: v
+  formula: v
+  prompt: "Kuinka suuri kappaleen nopeus on? Vastaa yksikössä m/s."
+  boxsize: 8
+
+feedback: |
+  Kappale kulkee {@sloppu@} metriä {@tloppu@} sekunnissa, joten nopeus on
+  {@sloppu@} m / {@tloppu@} s = {@sloppu / tloppu@} m/s.
+
+  Pystyakselilta luettava arvo {@sloppu@} on kuljettu matka. Nopeus
+  luetaan kuvaajasta sen jyrkkyytenä, ei yksittäisenä arvona.

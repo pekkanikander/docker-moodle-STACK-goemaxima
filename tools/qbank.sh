@@ -107,6 +107,15 @@ questiontests() {
   esac
 }
 
+# Figures are rendered per attempt, not stored: the gate is a render of every
+# figure question at every deployed seed, checking the images actually exist.
+figuretests() {
+  dc exec -T moodle php /opt/qbank/cli/figure-test.php \
+    --manifest=/opt/qbank-build/manifest.json \
+    --course="$QBANK_COURSE" \
+    --bank="$QBANK_BANK"
+}
+
 command="${1:-all}"
 [ $# -gt 0 ] && shift
 
@@ -114,13 +123,14 @@ case "$command" in
   compile) compile ;;
   import) import "$@" ;;
   quizzes) quizzes ;;
-  test) questiontests ;;
+  test) questiontests; figuretests ;;
   aitest) aitest "$@" ;;
   all)
     compile
     import
     quizzes
     questiontests
+    figuretests
     ;;
   *)
     echo "Usage: $0 [compile|import|quizzes|test|aitest|all]" >&2

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 130" width="340" height="130"
+     role="img" fill="none" stroke="#000" stroke-width="2">
+  <path d="M40 30 H100 M160 30 H200 M260 30 H300 V110 H40 V80 M40 60 V30" />
+  <rect x="100" y="18" width="60" height="24" fill="#fff" />
+  <rect x="200" y="18" width="60" height="24" fill="#fff" />
+  <path d="M25 70 H55 M33 78 H47" />
+  <g fill="#000" stroke="none" font-family="sans-serif" font-size="14">
+    <text x="130" y="12" text-anchor="middle">R1</text>
+    <text x="230" y="12" text-anchor="middle">R2</text>
+    <text x="66" y="75">U</text>
+  </g>
+</svg>

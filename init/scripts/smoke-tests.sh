@@ -72,6 +72,11 @@ foreach ($expected as $key) {
     $errors[] = "qtype_stack/" . $key . " is unset";
   }
 }
+foreach (["stack/plots", "stack/tmp"] as $dir) {
+  if (!is_dir("$CFG->dataroot/$dir") || !is_writable("$CFG->dataroot/$dir")) {
+    $errors[] = $dir . " is missing or not writable; CAS-generated plots would be dropped on arrival";
+  }
+}
 $noreply = get_config("core", "noreplyaddress");
 if (!$noreply) {
   $errors[] = "core/noreplyaddress is empty";
