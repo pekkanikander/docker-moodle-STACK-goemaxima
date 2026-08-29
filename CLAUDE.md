@@ -30,7 +30,9 @@ The setup serves exam drilling and question-interpretation training for a homesc
   pinned in `versions.yml`).
 - `qbank/` for the question-bank machinery: `compiler/` (YAML → Moodle XML),
   `cli/` (import and quiz build, run inside the `moodle` container),
-  `fixtures/` (test content), and `README.md` for the source format.
+  `fixtures/` (test content), `tests/` (compiler tests, run in the
+  `qbank-tools` container), and `README.md` for the source format and the
+  provenance the compiler stamps on every question.
 - `tools/qbank.sh` as the entry point; `docker/qbank-tools/` builds the compiler
   image. Question content lives in a separate repo, found via `QBANK_CONTENT_DIR`.
 - Sibling repos, checked out next to this one: `oivus-questions` (question

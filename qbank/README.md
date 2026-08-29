@@ -42,6 +42,9 @@ and are used only when creating them.
 
 `import` also accepts `-n` (dry run) and `--force` (re-import unchanged files).
 
+`qbank/tests/run-tests.sh` tests the compiler on the fixtures, inside the
+`qbank-tools` container; it needs no Moodle.
+
 ## What happens when a question changes
 
 A question's identity is the `id:` field,
@@ -53,14 +56,16 @@ renaming `id:` reads as "delete one question, add another".
 - **Edited file, same `id`** — a *new Moodle version* is added to the existing
   bank entry. Earlier attempts keep pointing at the version they were made
   against, so attempt history stays intact and quizzes pick up the new version.
-- **Unchanged file** — skipped. The importer stores a hash of each source file
-  in `{config_plugins}` under the `qbankimport` plugin name and compares.
+- **Unchanged file** — skipped. The importer stores a hash of each compiled
+  question in `{config_plugins}` under the `qbankimport` plugin name and
+  compares. The provenance tag is left out of that hash, so a new content
+  commit on its own is not a change (see below).
 - **Deleted file** — reported as `stale`, never deleted at Moodle.
   Removing a question from Moodle would orphan attempt data, so that stays a manual decision.
 - **Moved to another `category:`** — the question stays where Moodle has it.
   Categories are only used when creating a question.
 
-Because the state lives in the Moodle instance and not in a manifest file,
+Because the state lives in the Moodle instance and not in a per-site manifest,
 the content repo is not coupled to any particular Moodle site: the same tree can be
 imported into the local stack and into production independently.
 
@@ -68,6 +73,45 @@ Before importing, each file is put through STACK's own validation.
 STACK otherwise saves an invalid question silently,
 marked broken and invisible to students,
 so the importer asks up front and refuses instead.
+
+## Provenance
+
+An attempt is bound to the exact question version the student saw: Moodle keeps
+every version, and `question_attempts` points at one of them. What Moodle does
+not know is where that wording came from. So the compiler stamps each question
+with the content-repo commit it was built from, as a tag:
+
+```
+src-b144009b281a          # clean tree
+src-b144009b281a-dirty    # tree had uncommitted or untracked changes
+src-unknown               # not a git checkout at all
+```
+
+Tags attach to the question version, not to the bank entry, so an attempt from
+six months ago still names the commit whose message explains why the question
+is worded that way — read out of the Moodle database alone, which is what gets
+backed up and restored.
+
+The tag is deliberately outside the hash that decides whether a question has
+changed. Hashing it would make every commit look like an edit to every
+question and add a Moodle version nobody wrote.
+Because of that, the tag names the commit at which the question last actually
+changed, not the commit of the most recent import.
+
+Each build also writes `manifest.json` next to the XML: both commits (content
+and this repo's compiler), their dirty flags, the build time, and the source
+path and SHA-256 of every question. The importer records the manifest, and the
+questions it created or updated, as one row per import run in
+`{config_plugins}` — enough to reconstruct which questions changed together on
+which date, which is the unit a design cycle is reported in. Runs that changed
+nothing are not recorded.
+
+A commit recorded from a tree with uncommitted or untracked changes does not
+describe what was compiled, and a wrong provenance is worse than none because
+it will be believed. The importer therefore refuses such a build. `qbank.sh`
+waives that for a site on `localhost`, where attempts are throwaway; set
+`QBANK_ALLOW_DIRTY=1` to waive it for another throwaway site (running CI
+locally under `act`, say).
 
 ## Question source format
 

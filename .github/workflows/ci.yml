@@ -83,8 +83,28 @@ jobs:
       - name: Smoke tests
         run: ./init/scripts/smoke-tests.sh
 
+      - name: Question bank compiler tests
+        run: ./qbank/tests/run-tests.sh
+
       - name: Question bank fixtures
         run: ./tools/qbank.sh all
+
+      # The provenance tag names a commit, so it changes with every commit. If
+      # it reached the hash the importer compares, each commit would add a
+      # Moodle version to every question and attempt history would fill with
+      # versions nobody wrote. A new commit must therefore import as nothing.
+      - name: A new content commit creates no question versions
+        run: |
+          set -eu
+          git -c user.email=ci@example.invalid -c user.name=CI \
+            commit --allow-empty -m "provenance: a commit that changes no question"
+          ./tools/qbank.sh compile
+          out="$(./tools/qbank.sh import)"
+          printf '%s\n' "$out"
+          case "$out" in
+            *"created 0, updated 0,"*) ;;
+            *) echo "A new content commit re-imported questions." >&2; exit 1 ;;
+          esac
 
       - name: First-run path (tools/start.sh)
         run: |

@@ -5,17 +5,24 @@
 // not in the bank yet is created; one that is already there gets a new Moodle
 // question version, so that attempt history against earlier versions survives.
 // Files whose contents have not changed since the last import are skipped.
+//
+// The provenance of the build comes from the compiler's manifest: the commits
+// the questions were made from are recorded per run, and each question carries
+// the content commit as a tag, which the compiler stamped and this script only
+// passes on.
 
 require_once(__DIR__ . '/lib.php');
 
 [$options, $unrecognised] = cli_get_params([
     'source' => '',
+    'manifest' => '',
     'course' => '',
     'course-fullname' => '',
     'bank' => '',
     'bank-name' => '',
     'dry-run' => false,
     'force' => false,
+    'allow-dirty' => false,
     'help' => false,
 ], [
     'h' => 'help',
@@ -26,18 +33,21 @@ if ($unrecognised) {
     cli_error('Unrecognised options: ' . implode(', ', $unrecognised));
 }
 
-if ($options['help'] || $options['source'] === '' || $options['course'] === '' || $options['bank'] === '') {
+if ($options['help'] || $options['source'] === '' || $options['manifest'] === ''
+        || $options['course'] === '' || $options['bank'] === '') {
     echo <<<EOL
 Import Moodle XML questions into a question bank activity.
 
 Options:
   --source=DIR          Directory tree of .xml files to import (required).
+  --manifest=FILE       Build manifest written by the compiler (required).
   --course=SHORTNAME    Course shortname; created if missing (required).
   --course-fullname=S   Full name to use when creating the course.
   --bank=IDNUMBER       Question bank activity idnumber; created if missing (required).
   --bank-name=NAME      Display name to use when creating the bank.
   -n, --dry-run         Report what would happen, change nothing.
   --force               Re-import questions even if the source file is unchanged.
+  --allow-dirty         Import a build made from an uncommitted tree.
   -h, --help            Show this help.
 
 EOL;
@@ -49,6 +59,28 @@ if (!is_dir($source)) {
     cli_error("Source directory not found: {$source}");
 }
 
+$manifest = qbank_read_manifest($options['manifest']);
+
+// A commit recorded from a tree with uncommitted or untracked changes, or from
+// no git checkout at all, does not describe the bytes that were compiled, and
+// a wrong provenance is worse than none because it will be believed. Local
+// iteration passes --allow-dirty and keeps the -dirty marker in the tag; a
+// site that accumulates real attempts does not.
+if (!$options['allow-dirty']) {
+    $problems = [];
+    foreach (['content' => $manifest->content, 'compiler' => $manifest->compiler] as $name => $tree) {
+        if ($tree->commit === '') {
+            $problems[] = "the {$name} tree is not a git checkout";
+        } else if ($tree->dirty) {
+            $problems[] = "the {$name} tree had uncommitted changes";
+        }
+    }
+    if ($problems) {
+        cli_error("Refusing to import: " . implode(', ', $problems)
+            . ".\nCommit the changes and recompile, or pass --allow-dirty for a throwaway site.");
+    }
+}
+
 qbank_become_admin();
 
 $course = qbank_ensure_course($options['course'], $options['course-fullname'] ?: $options['course']);
@@ -58,14 +90,18 @@ $context = context_module::instance($cm->id);
 cli_writeln("Course:  {$course->shortname} (id {$course->id})");
 cli_writeln("Bank:    {$options['bank']} (cmid {$cm->id}, context {$context->id})");
 cli_writeln("Source:  {$source}");
+cli_writeln("Content: {$manifest->content->tag}, compiled "
+    . ($manifest->compiler->commit === '' ? 'by an unversioned compiler' : "by {$manifest->compiler->commit}"
+        . ($manifest->compiler->dirty ? ' (dirty)' : ''))
+    . " at {$manifest->builtat}");
 
 $files = qbank_xml_files($source);
 if (!$files) {
     cli_error("No .xml files found under {$source}");
 }
 
-$created = 0;
-$updated = 0;
+$created = [];
+$updated = [];
 $skipped = 0;
 $errors = [];
 $seen = [];
@@ -96,7 +132,7 @@ foreach ($files as $relative) {
     }
 
     $categorypath = array_values(array_filter(explode('/', dirname($relative)), fn($part) => $part !== '.'));
-    $hash = hash_file('sha256', $path);
+    $hash = qbank_content_hash($path);
     $statekey = qbank_state_key($options['bank'], $idnumber);
     $entry = qbank_find_entry($context->id, $idnumber);
 
@@ -107,7 +143,11 @@ foreach ($files as $relative) {
 
     if ($options['dry-run']) {
         cli_writeln(($entry ? 'would update  ' : 'would create  ') . $idnumber);
-        $entry ? $updated++ : $created++;
+        if ($entry) {
+            $updated[] = $idnumber;
+        } else {
+            $created[] = $idnumber;
+        }
         continue;
     }
 
@@ -138,7 +178,7 @@ foreach ($files as $relative) {
             continue;
         }
         cli_writeln("updated  {$idnumber}");
-        $updated++;
+        $updated[] = $idnumber;
     } else {
         $qformat->setCategory(qbank_ensure_category($context->id, $categorypath));
         if (!$qformat->importpreprocess() || !$qformat->importprocess() || !$qformat->importpostprocess()) {
@@ -146,7 +186,7 @@ foreach ($files as $relative) {
             continue;
         }
         cli_writeln("created  {$idnumber}");
-        $created++;
+        $created[] = $idnumber;
     }
 
     set_config($statekey, $hash, QBANK_STATE_PLUGIN);
@@ -165,7 +205,25 @@ foreach (array_diff($stale, array_keys($seen)) as $idnumber) {
     cli_writeln("stale    {$idnumber} (in the bank, not in the source tree)");
 }
 
-cli_writeln("created {$created}, updated {$updated}, unchanged {$skipped}, failed " . count($errors));
+// The questions that changed in one run are the ones changed together, which
+// is the unit a design cycle is reported in. Record them with the commits they
+// came from and the source file of each, so that "these questions changed on
+// this date, from this commit" survives in the database that gets backed up.
+if (!$options['dry-run'] && ($created || $updated)) {
+    $paths = array_column($manifest->questions, 'source', 'id');
+    qbank_record_run([
+        'bank' => $options['bank'],
+        'builtat' => $manifest->builtat,
+        'content' => $manifest->content,
+        'compiler' => $manifest->compiler,
+        'created' => array_intersect_key($paths, array_flip($created)),
+        'updated' => array_intersect_key($paths, array_flip($updated)),
+        'unchanged' => $skipped,
+    ]);
+}
+
+cli_writeln('created ' . count($created) . ', updated ' . count($updated)
+    . ", unchanged {$skipped}, failed " . count($errors));
 
 if ($errors) {
     cli_error("Import errors:\n  " . implode("\n  ", $errors));

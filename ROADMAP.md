@@ -81,6 +81,15 @@ content-creation phase, so this fits in the next few weeks):
       Real delivery verified; sender `pnr+noreply@iki.fi`, and all staging
       mail is diverted to `pnr+oivus@iki.fi` via `divertallemailsto`
       (admin UI) — remove the diversion before opening access to others.
+- [x] TASK-05 (`notes/TASK-05-content-provenance.md`): done 2026-08-29.
+      Question versions are bound to the content-repo commit that produced
+      them: the compiler stamps a `src-<sha>` tag per question and writes a
+      build manifest (both commits, dirty flags, build time, source path and
+      hash per question); the importer refuses a build made from a dirty tree
+      unless the target is a throwaway site, and records each import run in
+      `{config_plugins}`. The tag is excluded from the change-detection hash,
+      so a new commit alone creates no question versions (tested in
+      `qbank/tests/` and end to end in CI).
 - [ ] Backup security session: a compromised server can poison the dumps the
       MBP pulls, and a restored dump faithfully restores attacker state.
       Topics: append-only MBP copies, baselining/diffing security-relevant
@@ -124,4 +133,4 @@ content-creation phase, so this fits in the next few weeks):
   repos) — the TASK-02 question type and its companion plugin.
 - `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
 - `infra/BACKUP.md` — backup/restore architecture and runbooks.
-- `notes/` — task briefs for upcoming work (TASK-01, TASK-02).
+- `notes/` — task briefs for upcoming work (TASK-01, TASK-02, TASK-05).

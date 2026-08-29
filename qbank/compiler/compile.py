@@ -12,11 +12,13 @@ Run inside the qbank-tools container; see tools/qbank.sh.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -64,6 +66,14 @@ AITEXT_LEVELS_RANGE = (2, 5)
 # presentational): no numbers at all, a three-way badge per criterion, or
 # points per criterion plus the total.
 AITEXT_GRADINGS = ("none", "coarse", "fine")
+
+# Provenance: every question is tagged with the content-repo commit it was
+# compiled from, so that an attempt made against a question version leads back
+# to the source and to the commit message explaining why it is worded that way.
+# The importer strips tags with this prefix before deciding whether a question
+# has changed; without that, a new commit would re-import every question and
+# create a meaningless Moodle version for each.
+PROVENANCE_TAG_PREFIX = "src-"
 
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
@@ -889,10 +899,26 @@ def load_quiz(path: Path, source: dict) -> dict:
     return quiz
 
 
-def compile_tree(source: Path, out: Path, stackversion: str) -> int:
+def manifest_entry(qid: str, path: Path, sourceroot: Path, target: Path, out: Path) -> dict:
+    """One question's line in the build manifest: where it came from."""
+    return {
+        "id": qid,
+        "source": str(path.relative_to(sourceroot)),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "xml": str(target.relative_to(out)),
+    }
+
+
+def provenance_tag(commit: str, dirty: bool) -> str:
+    """The tag naming the content commit a question was compiled from."""
+    return PROVENANCE_TAG_PREFIX + (commit[:12] if commit else "unknown") + ("-dirty" if dirty else "")
+
+
+def compile_tree(source: Path, out: Path, stackversion: str, provenance: dict) -> int:
     questions: dict[str, Question] = {}
     quizzes: list[dict] = []
     aitext: dict[str, dict] = {}
+    sources: dict[str, Path] = {}
 
     for path in sorted(source.rglob("*.yaml")):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -907,6 +933,7 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
             if spec["id"] in questions or spec["id"] in aitext:
                 fail(path, f"id '{spec['id']}' already used")
             aitext[spec["id"]] = spec
+            sources[spec["id"]] = path
             continue
         if qtype != "stack":
             fail(path, f"unknown question type '{qtype}'")
@@ -914,6 +941,7 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
         if question.id in questions or question.id in aitext:
             fail(path, f"id '{question.id}' already in use")
         questions[question.id] = question
+        sources[question.id] = path
 
     for quiz in quizzes:
         for entry in quiz["questions"]:
@@ -925,10 +953,15 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
     for stale in (out / "questions", out / "quizzes", out / "aitext"):
         shutil.rmtree(stale, ignore_errors=True)
 
+    tag = provenance_tag(provenance["content"]["commit"], provenance["content"]["dirty"])
+    imported: list[dict] = []
+
     for question in questions.values():
         target = out.joinpath("questions", *question.category, f"{question.id}.xml")
         target.parent.mkdir(parents=True, exist_ok=True)
+        question.tags.append(tag)
         target.write_text(render_question(question, stackversion), encoding="utf-8")
+        imported.append(manifest_entry(question.id, sources[question.id], source, target, out))
 
     if quizzes:
         quizdir = out / "quizzes"
@@ -947,10 +980,25 @@ def compile_tree(source: Path, out: Path, stackversion: str) -> int:
             )
             target = out.joinpath("questions", *spec["category"], f"{spec['id']}.xml")
             target.parent.mkdir(parents=True, exist_ok=True)
+            spec["tags"].append(tag)
             target.write_text(render_aitext_question(spec), encoding="utf-8")
+            imported.append(manifest_entry(spec["id"], sources[spec["id"]], source, target, out))
+
+    # The manifest is what the importer records as the provenance of an import
+    # run: which commits produced these questions, when, and from which files.
+    manifest = {
+        "builtat": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "stackversion": stackversion,
+        "content": {**provenance["content"], "tag": tag},
+        "compiler": provenance["compiler"],
+        "questions": sorted(imported, key=lambda entry: entry["id"]),
+    }
+    (out / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
     print(f"compiled {len(questions)} STACK and {len(aitext)} aitext questions, "
-          f"{len(quizzes)} quizzes into {out}")
+          f"{len(quizzes)} quizzes into {out} from {tag}")
     return 0
 
 
@@ -959,14 +1007,27 @@ def main() -> int:
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--stack-version", required=True)
+    # Provenance is passed in rather than read here: git lives on the host,
+    # this runs in a container that sees only the two mounted trees. An empty
+    # commit means the tree is not a git checkout at all; the importer treats
+    # that like a dirty one and refuses it outside local iteration.
+    parser.add_argument("--content-commit", required=True)
+    parser.add_argument("--content-dirty", action="store_true")
+    parser.add_argument("--compiler-commit", required=True)
+    parser.add_argument("--compiler-dirty", action="store_true")
     args = parser.parse_args()
 
     if not args.source.is_dir():
         print(f"Source directory not found: {args.source}", file=sys.stderr)
         return 1
 
+    provenance = {
+        "content": {"commit": args.content_commit, "dirty": args.content_dirty},
+        "compiler": {"commit": args.compiler_commit, "dirty": args.compiler_dirty},
+    }
+
     try:
-        return compile_tree(args.source, args.out, args.stack_version)
+        return compile_tree(args.source, args.out, args.stack_version, provenance)
     except SourceError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1

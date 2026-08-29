@@ -24,22 +24,56 @@ if [ ! -w "$QBANK_BUILD_DIR" ]; then
 Likely created root-owned by 'docker compose up'; remove it and rerun."
 fi
 
+# Provenance of a build: the content commit is what an attempt is traced back
+# to, and the compiler commit is what turned that source into the XML Moodle
+# stores. Git lives here, on the host; the compiler runs in a container that
+# sees only the two mounted trees, so the commits are passed in to it.
+git_commit() {
+  git -C "$1" rev-parse --verify HEAD 2>/dev/null || true
+}
+
+# Uncommitted or untracked changes both count: an untracked question file is
+# compiled into the build just the same, and neither is described by the SHA.
+git_dirty_flag() {
+  if [ -n "$(git -C "$1" status --porcelain 2>/dev/null)" ]; then
+    echo "$2"
+  fi
+}
+
 compile() {
   dc build qbank-tools
   # The container writes into the build directory; make it do so as us, not root.
   dc run --rm --user "$(id -u):$(id -g)" qbank-tools \
     --source /opt/qbank-content \
     --out /opt/qbank-build \
-    --stack-version "${STACK_MAXIMA_VERSION}"
+    --stack-version "${STACK_MAXIMA_VERSION}" \
+    --content-commit "$(git_commit "$QBANK_CONTENT_DIR")" \
+    --compiler-commit "$(git_commit .)" \
+    $(git_dirty_flag "$QBANK_CONTENT_DIR" --content-dirty) \
+    $(git_dirty_flag . --compiler-dirty)
 }
 
+# A build made from a dirty tree is fine to iterate against locally, where
+# attempts are throwaway, and is refused anywhere else: a commit that does not
+# describe what was compiled is worse than none, because it will be believed.
+# QBANK_ALLOW_DIRTY=1 waives that for another throwaway site, e.g. under `act`.
 import() {
+  allowdirty=""
+  case "${MOODLE_SITE_URL:-}" in
+    ""|http://localhost*|http://127.0.0.1*) allowdirty="--allow-dirty" ;;
+  esac
+  if [ "${QBANK_ALLOW_DIRTY:-0}" = "1" ]; then
+    allowdirty="--allow-dirty"
+  fi
+
   dc exec -T moodle php /opt/qbank/cli/import-questions.php \
     --source=/opt/qbank-build/questions \
+    --manifest=/opt/qbank-build/manifest.json \
     --course="$QBANK_COURSE" \
     --course-fullname="$QBANK_COURSE_FULLNAME" \
     --bank="$QBANK_BANK" \
     --bank-name="$QBANK_BANK_NAME" \
+    $allowdirty \
     "$@"
 }
 

@@ -21,8 +21,13 @@ use core_question\category_manager;
 use core_question\local\bank\question_bank_helper;
 
 // Plugin name used for our own bookkeeping rows in {config_plugins}: one row
-// per imported question, holding the hash of the source file it came from.
+// per imported question, holding the hash of the source file it came from,
+// plus one row per import run that changed anything.
 const QBANK_STATE_PLUGIN = 'qbankimport';
+
+// Prefix of the provenance tag the compiler stamps on every question; keep in
+// step with PROVENANCE_TAG_PREFIX in qbank/compiler/compile.py.
+const QBANK_PROVENANCE_TAG_PREFIX = 'src-';
 
 /**
  * Run as the site admin. Every CLI script here needs a user for capability
@@ -151,6 +156,52 @@ function qbank_latest_questionid(int $entryid): int {
  */
 function qbank_state_key(string $bankidnumber, string $idnumber): string {
     return 'h' . sha1($bankidnumber . "\0" . $idnumber);
+}
+
+/**
+ * Hash of a compiled question, ignoring the provenance tag.
+ *
+ * The tag names the content commit, so it changes whenever the content repo
+ * does. Hashing it would make every commit look like a change to every
+ * question and add a Moodle version per question that nobody edited. What
+ * decides whether a question changed is everything else in the file.
+ */
+function qbank_content_hash(string $path): string {
+    $xml = file_get_contents($path);
+    $pattern = '~[ \t]*<tag><text>' . preg_quote(QBANK_PROVENANCE_TAG_PREFIX, '~') . '[^<]*</text></tag>\n~';
+
+    return hash('sha256', preg_replace($pattern, '', $xml));
+}
+
+/**
+ * The build manifest the compiler wrote next to the XML it produced.
+ */
+function qbank_read_manifest(string $path): stdClass {
+    if (!is_readable($path)) {
+        cli_error("Build manifest not found: {$path}");
+    }
+    $manifest = json_decode(file_get_contents($path));
+    if (!$manifest instanceof stdClass) {
+        cli_error("Build manifest is not valid JSON: {$path}");
+    }
+
+    return $manifest;
+}
+
+/**
+ * Record one import run: which commits it applied, when, and to what.
+ *
+ * A design cycle is a set of questions changed together, so the run is the
+ * unit worth keeping. It lives in {config_plugins} rather than a table of its
+ * own, which would mean a plugin with an install and upgrade path for what is
+ * a few strings. Runs that changed nothing are not recorded.
+ */
+function qbank_record_run(array $record): void {
+    set_config(
+        'run' . gmdate('Ymd\THis\Z'),
+        json_encode($record, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        QBANK_STATE_PLUGIN
+    );
 }
 
 /**
