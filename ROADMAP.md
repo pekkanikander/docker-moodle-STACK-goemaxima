@@ -74,12 +74,13 @@ in `notes/`; feature work done locally, operationalisation pending.
 Before real attempt history accumulates (drilling starts after the current
 content-creation phase, so this fits in the next few weeks):
 
-- [ ] Outgoing email. Done 2026-08-28: Mailpit capture for local/CI (pinned
+- [x] Outgoing email, done 2026-08-29: Mailpit capture for local/CI (pinned
       service, smoke-tested mail round-trip), `mail-init.sh` for idempotent
-      mail configuration, staging wired to relay via smtp.iki.fi (no MTA on
-      the VM, no Mailpit there either). Remaining: IKI SMTP credentials in
-      the staging admin UI and an end-to-end delivery test to a real mailbox
-      (`infra/hetzner/DEPLOY.md`, "Outgoing mail via smtp.iki.fi").
+      mail configuration, staging relaying via smtp.iki.fi (no MTA on the
+      VM, no Mailpit there either; runbook in `infra/hetzner/DEPLOY.md`).
+      Real delivery verified; sender `pnr+noreply@iki.fi`, and all staging
+      mail is diverted to `pnr+oivus@iki.fi` via `divertallemailsto`
+      (admin UI) — remove the diversion before opening access to others.
 - [ ] Backup security session: a compromised server can poison the dumps the
       MBP pulls, and a restored dump faithfully restores attacker state.
       Topics: append-only MBP copies, baselining/diffing security-relevant
@@ -91,8 +92,9 @@ content-creation phase, so this fits in the next few weeks):
 
 ## M7 — Possible extensions (not planned yet)
 
-- Access for other homeschool families: outbound email, GDPR/privacy notice,
-  account provisioning policy.
+- Access for other homeschool families: remove the staging
+  `divertallemailsto` diversion, GDPR/privacy notice, account provisioning
+  policy.
 - Windows support for the no-terminal local setup (`tools/start.sh` stays
   POSIX; a Windows launcher is needed).
 - Release-based deploy automation, remaining parts: GitHub release artefact
