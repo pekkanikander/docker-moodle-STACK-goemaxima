@@ -261,6 +261,10 @@ new Moodle *version* of the existing question, so earlier attempts stay intact.
 `import` and `quizzes` print the course, bank and quiz they touched, with the
 Moodle course-module ids.
 
+Only one `qbank.sh` run at a time may touch the site; a second one refuses to
+start and names the run already in flight. Two at once corrupt each other's
+work in ways that look like a broken database rather than like contention.
+
 ### 4. See it in the browser
 
 Reload the page; there is nothing to clear or republish. Using the cmids printed

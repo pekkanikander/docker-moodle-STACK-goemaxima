@@ -24,6 +24,41 @@ if [ ! -w "$QBANK_BUILD_DIR" ]; then
 Likely created root-owned by 'docker compose up'; remove it and rerun."
 fi
 
+# One run at a time per stack. Two runs against one Moodle wreck each other in
+# ways that do not look like contention: concurrent bulktestall.php runs abort
+# at a moving point with an "Error writing to database" that is not real, and
+# concurrent imports race on the same bank and the same build directory. The
+# key is the compose project, i.e. the stack the 'dc' calls talk to, so a run
+# elsewhere against another stack is not blocked.
+lockdir="${TMPDIR:-/tmp}"
+lockdir="${lockdir%/}/qbank-${COMPOSE_PROJECT_NAME:-$(basename "$(pwd)")}.lock"
+
+lock() {
+  if ! mkdir "$lockdir" 2>/dev/null; then
+    holder="$(cat "${lockdir}/owner" 2>/dev/null || true)"
+    pid="${holder#pid }"
+    pid="${pid%%,*}"
+    # Only a demonstrably dead owner makes the lock stale. An owner we cannot
+    # read is one that has claimed the directory but not yet written itself
+    # into it, so it counts as live: breaking that lock would let exactly the
+    # two runs this guards against proceed together.
+    if [ -z "$holder" ] || kill -0 "$pid" 2>/dev/null; then
+      die "Another qbank run holds the lock: ${holder:-owner not yet recorded}.
+Wait for it to finish, or kill it. If nothing is running, remove ${lockdir}."
+    fi
+    log "Clearing a stale qbank lock left by ${holder}."
+    rm -rf "$lockdir"
+    mkdir "$lockdir" || die "Cannot create the lock directory ${lockdir}."
+  fi
+  # Cleanup hangs off EXIT. INT and TERM have to be caught as well and turned
+  # into an exit, because a shell killed by an untrapped signal runs no EXIT
+  # trap at all under dash, which is the /bin/sh this gets in CI.
+  trap 'rm -rf "$lockdir"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  echo "pid $$, '${command}', started $(date '+%Y-%m-%d %H:%M:%S')" >"${lockdir}/owner"
+}
+
 # Provenance of a build: the content commit is what an attempt is traced back
 # to, and the compiler commit is what turned that source into the XML Moodle
 # stores. Git lives here, on the host; the compiler runs in a container that
@@ -118,6 +153,8 @@ figuretests() {
 
 command="${1:-all}"
 [ $# -gt 0 ] && shift
+
+lock
 
 case "$command" in
   compile) compile ;;

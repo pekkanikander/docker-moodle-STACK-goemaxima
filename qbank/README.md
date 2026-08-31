@@ -45,6 +45,20 @@ and are used only when creating them.
 `qbank/tests/run-tests.sh` tests the compiler on the fixtures, inside the
 `qbank-tools` container; it needs no Moodle.
 
+Only one `qbank.sh` run at a time may touch a stack, and the script enforces it:
+a second run refuses to start and names the one already in flight. This matters
+because two concurrent runs do not fail like contention. Two `bulktestall.php`
+runs abort each other with `!!! Error writing to database !!!` at a point that
+moves between runs, which reads as a broken question or a broken database; two
+imports race on the same bank and the same build directory. The lock is a
+directory under `$TMPDIR`, keyed on the compose project, and is released however
+the run ends; one left behind by a `kill -9` is cleared by the next run, which
+checks whether the recorded owner is still alive.
+
+The gate cannot see a bulk test started from Moodle's own web interface
+(`/question/type/stack/adminui/bulktestindex.php`, linked from the STACK
+settings page). Use `qbank.sh test` rather than that page while working.
+
 ## What happens when a question changes
 
 A question's identity is the `id:` field,
