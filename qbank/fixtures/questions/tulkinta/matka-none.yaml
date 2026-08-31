@@ -26,6 +26,21 @@ interpretation:
       value: sqrt(sx^2 + sy^2)
       why: "Laskit etäisyyden lähtöpisteestä eli välimatkan (eli siirtymän) suuruuden. Tässä tehtävässä sana <em>matka</em> tarkoittaa kuljetun reitin pituutta."
 
+hints:
+  - |
+    Mieti ensin, mitä sana <em>matka</em> tässä tehtävässä tarkoittaa.
+    Vaihtoehtoja on kaksi:
+
+    - kuljetun reitin pituus
+    - etäisyys lähtöpisteestä
+
+    Tehtävänannossa kuvataan, mitä reittiä oppilas kulkee.
+  - |
+    Kuljettu matka on reitin osien pituuksien summa: \(s = s_1 + s_2\).
+  - |
+    Sijoita osien pituudet: \(s_1 = {@sx@}\,\mathrm{m}\) ja
+    \(s_2 = {@sy@}\,\mathrm{m}\).
+
 answer:
   type: numerical
   quantity: s

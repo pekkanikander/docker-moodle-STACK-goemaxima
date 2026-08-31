@@ -224,6 +224,7 @@ class Question:
     shuffle: bool = True
     show: int = 0  # options shown per variant; 0 = all of them
     general_feedback: str = ""
+    hints: list[str] = field(default_factory=list)
     note: str = ""
     tags: list[str] = field(default_factory=list)
     seeds: list[int] = field(default_factory=list)
@@ -298,6 +299,31 @@ def check_prose(path: Path, field: str, text: str) -> None:
     for marker, what in PROSE_FORBIDDEN:
         if marker in lowered:
             fail(path, f"'{field}' contains {what}; figures belong in 'figure:'")
+
+
+def load_hints(path: Path, source: dict) -> list[str]:
+    """The hint ladder, compiled to HTML.
+
+    Only the 'interactive' behaviour reads a question's hints, so a question
+    that carries them renders identically under every other behaviour. That is
+    what lets one source serve both the exam quiz and the drill quiz. Under
+    'interactive' the hint count is the try count, which is the author's
+    decision, so there is no cap here.
+
+    Nothing but the text is emitted: STACK imports hints with 'withparts' and
+    'withoptions' both false (questiontype.php), so 'shownumcorrect' and
+    'clearwrong' would be silently dropped.
+    """
+    hints = source.get("hints")
+    if hints is None:
+        return []
+    if not isinstance(hints, list) or not hints:
+        fail(path, "'hints' must be a non-empty list of prose blocks")
+    for index, hint in enumerate(hints, start=1):
+        if not isinstance(hint, str) or not hint.strip():
+            fail(path, f"hint {index} must be a non-empty string")
+        check_prose(path, f"hint {index}", hint)
+    return [to_html(hint) for hint in hints]
 
 
 def load_figure(path: Path, source: dict, sourceroot: Path) -> Figure | None:
@@ -466,6 +492,7 @@ def load_question(path: Path, source: dict, sourceroot: Path) -> Question:
         interpretation=interpretation,
         readings=readings,
         general_feedback=source.get("feedback", ""),
+        hints=load_hints(path, source),
         note=source.get("note", ""),
         tags=[str(tag) for tag in source.get("tags", [])],
         seeds=[int(seed) for seed in source.get("seeds", [])],
@@ -545,6 +572,7 @@ def load_mcq_question(path: Path, source: dict, sourceroot: Path) -> Question:
         shuffle=shuffle,
         show=show,
         general_feedback=source.get("feedback", ""),
+        hints=load_hints(path, source),
         note=source.get("note", ""),
         tags=[str(tag) for tag in source.get("tags", [])],
         seeds=[int(seed) for seed in source.get("seeds", [])],
@@ -570,6 +598,8 @@ def load_aitext_question(path: Path, source: dict) -> dict:
     category = require(path, source, "category")
     if not isinstance(category, list) or not category:
         fail(path, "'category' must be a non-empty list of category names")
+    if "hints" in source:
+        fail(path, "'hints' applies to STACK questions only")
     grading = source.get("grading", "fine")
     if grading not in AITEXT_GRADINGS:
         fail(path, f"'grading' must be one of {', '.join(AITEXT_GRADINGS)}")
@@ -1193,6 +1223,7 @@ def render_question(question: Question, stackversion: str) -> str:
         + text_element("questiontext", stem_html(question),
                        files=figure_file_element(question.figure) if question.figure else "")
         + text_element("generalfeedback", to_html(question.general_feedback) if question.general_feedback else "")
+        + "".join(text_element("hint", hint) for hint in question.hints)
         + element("defaultgrade", f"{question.grade:g}")
         + element("penalty", f"{question.penalty:g}")
         + element("hidden", 0)

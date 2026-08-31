@@ -74,9 +74,20 @@ in `notes/`; feature work done locally, operationalisation pending.
 What a question can be made of, beyond the interpretation ladder that M4 left
 in place. Briefs in `notes/`.
 
-- [ ] TASK-03 (`notes/TASK-03-drilling-mode.md`): drilling mode — hints and
-      worked steps faded across attempts, as a second axis beside the
-      interpretation ladder.
+- [x] TASK-03 (`notes/TASK-03-drilling-mode.md`): done 2026-08-31. Drilling
+      mode, as a property of the quiz rather than of the question, so one
+      source serves both uses and no question is forked into an exam copy and
+      a drill copy that drift apart. `hints:` on a question source is an
+      ordered ladder of prose blocks; only the `interactive` behaviour reads
+      hints, so a hinted question renders byte-identically everywhere else,
+      and under `interactive` the hint count is the try count. Quiz `grade: 0`
+      (from TASK-06) makes a drill ungraded — no gradebook item, and no
+      `marks` in the review lists, so a wrong answer is feedback rather than a
+      score. Deliberately not done: STACK's `[[hint]]` reveal blocks and the
+      twin-question `drill:` route (Feature 3 in the brief), pending evidence
+      from use on whether `interactive`'s fixed try count reads as structure
+      or as pressure; genuine spaced repetition (Leitner, SM-2), which is not
+      in Moodle core and is out of scope.
 - [x] TASK-04 (`notes/TASK-04-figures.md`): done 2026-08-29. Questions can
       carry a figure: `figure.plot` for a graph STACK draws from the
       question's own variables (no constant may be repeated from

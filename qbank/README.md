@@ -144,11 +144,15 @@ answer:
   boxsize: 8
   syntaxhint: "?*m/s"
 
+hints:                          # optional; see Hints below
+  - |
+    Shown after the first failed try, under `behaviour: interactive`.
+
 feedback: |
   Worked solution, shown after the question is finished.
 ```
 
-Prose fields (`stem`, `prompt`, `feedback`, `why`) take blank-line-separated
+Prose fields (`stem`, `prompt`, `feedback`, `why`, `hints`) take blank-line-separated
 paragraphs and `- ` bullet lists.
 Nothing else is interpreted: LaTeX, CASText (`{@...@}`) and inline HTML
 pass through byte for byte.
@@ -175,6 +179,64 @@ Randomised questions must list `seeds:` — a question whose `variables:` use
 seeds a question has no fixed set of variants and its tests only ever
 exercise whichever one comes up, so `tools/qbank.sh test` would not be a
 real gate.
+
+Three seeds is enough for an exam question, which is seen once. A question
+used for drilling is seen repeatedly: *Try another question like this one*
+walks the deployed seeds, so with three of them the third redraw already
+repeats numbers the student has just worked through. Give such questions
+eight to twelve seeds. The cost is bulk-test time, which is the honest trade.
+
+## Hints
+
+`hints:` is an ordered list of prose blocks, shown one at a time as the student
+runs out of tries:
+
+```yaml
+hints:
+  - |
+    Mitä suuretta tehtävässä kysytään, ja mikä lukema on nopeuden muutos?
+  - |
+    Kiihtyvyys on nopeuden muutos jaettuna ajalla: \(a = \frac{\Delta v}{t}\).
+  - |
+    Sijoita: \(\Delta v = {@dv@}\,\mathrm{m/s}\), \(t = {@aika@}\,\mathrm{s}\).
+```
+
+**Only the `interactive` behaviour reads hints.** Under every other behaviour a
+question that carries them renders exactly as if it did not, which is what lets
+one source serve both an exam quiz and a drill quiz — a question is never
+forked into an exam copy and a drill copy that then drift apart. Drilling is a
+property of the quiz, not of the question. Under `interactive`, the number of
+tries is the number of hints plus one, so the length of the ladder is the
+author's decision and there is no cap. STACK's *Check*-to-validate step does
+not consume a try.
+
+STACK evaluates a hint inside the question's Maxima session, so `{@...@}`
+interpolates and a hint is correct for whichever variant the student drew.
+A hint is CASText and is checked as such at import, like any other prose here.
+
+The ladder should mirror the `stated`/`choice`/`none` ladder *inside* a single
+question — each rung removes one thing the student has to supply:
+
+1. which quantity is asked, and which reading of the stem applies;
+2. the relation, with symbols;
+3. the numbers substituted, leaving only the arithmetic.
+
+`feedback:` remains the worked solution and is unaffected. A hint that merely
+restates the stem is worse than no hint.
+
+Note the trade-off for `scaffold: choice` questions: STACK grades each PRT on
+its own only under `adaptive`, so under `interactive` the reading and the
+answer stop being independently graded and both inputs must be filled before a
+try counts. The PRT feedback naming the misreading still appears. For `stated`
+and `none` questions — one PRT — nothing is lost. Escalating hints or per-part
+independence, not both.
+
+Hints are **not** covered by `tools/qbank.sh test`: STACK question tests
+exercise the PRTs, not the hints. A hint with a CASText error fails the import
+gate, and beyond that a hint ladder is reviewed by reading it.
+
+`hints:` applies to STACK questions, `type: mcq` included; it is refused on
+`type: aitext`.
 
 ## Figures
 
@@ -487,15 +549,39 @@ attempt on an exhausted pool. A draw larger than the pool is refused twice
 before that, by the compiler against the compiled tree and by
 `build-quiz.php` against the actual bank.
 
-`grade: 0` makes the quiz ungraded: no gradebook item is created. The drill
-recipe is exactly that — ungraded, immediate feedback, no marks shown, a
-random slot over the drill tags (see `qbank/fixtures/quizzes/drillikoe.yaml`):
+`grade: 0` makes the quiz ungraded: no gradebook item is created, so there is
+no hidden mark for the student to go and find. That is the drill recipe —
+ungraded, unlimited attempts, `correctness` for the right/wrong verdict and no
+`marks` in either review list, which is what keeps the numbers off the screen.
+With `attempts: 0` and `grade: 0` the `grademethod` is meaningless; leave it at
+its default.
+
+Two variants, by what the question set is:
 
 ```yaml
-behaviour: immediatefeedback    # check once, see the feedback, move on
+# Hint ladder: interactive gives hints + 1 tries, escalating the support
+# after each failed try, and "Try another question like this one" redraws a
+# variant.  See qbank/fixtures/quizzes/tulkintadrilli.yaml.
+behaviour: interactive
 grade: 0
+attempts: 0
 review:
-  during: [correctness, specificfeedback]   # no marks: feedback, not score
+  during: [correctness, specificfeedback]
+  after: [attempt, correctness, specificfeedback, generalfeedback]
+questions:
+  - id: liike-kiihtyvyys-01
+```
+
+```yaml
+# Multiple choice: check once, see the feedback, move on -- free retries
+# would make clicking through the options a winning strategy.  A random slot
+# over the drill tags makes each attempt a different set.  See
+# qbank/fixtures/quizzes/drillikoe.yaml.
+behaviour: immediatefeedback
+grade: 0
+attempts: 0
+review:
+  during: [correctness, specificfeedback]
   after: [attempt, correctness, specificfeedback, generalfeedback]
 questions:
   - random: 5
@@ -509,9 +595,12 @@ cannot be given here, as Moodle only accepts archetypal behaviours.) It also
 lets the student revise an answer and check again, against a penalty. Under
 `immediatefeedback` the answer locks on the first *Check*: for an MCQ, free
 retries would make clicking through the options a winning strategy, so the
-retry is the next attempt at the whole quiz, on a fresh variant. Note that
-`interactive` allows hints + 1 tries and the compiler emits no hints, so it
-currently behaves like `immediatefeedback`.
+retry is the next attempt at the whole quiz, on a fresh variant.
+`interactive` gives hints + 1 tries, revealing one hint per failed try (see
+[Hints](#hints)), and — like `immediatefeedback`, and unlike `adaptive` —
+finishes each question during the attempt, which is what puts *Try another
+question like this one* on the page. A question with no hints gets one try
+under it, as under `immediatefeedback`.
 
 `review:` says what the student is shown: `during` while answering, `after`
 when looking at a submitted attempt. Each takes `all` or a list drawn from

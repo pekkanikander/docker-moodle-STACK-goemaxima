@@ -1,0 +1,23 @@
+id: fixture-tulkintadrilli
+name: "Fixture: tulkintadrilli"
+intro: |
+  Tämä koe on testiaineistoa: arvosanaton drillikoe, jossa vihjeet porrastavat
+  tuen yrityskerta kerrallaan ja "Kokeile toista samanlaista tehtävää" arpoo
+  saman tehtävän uuden variantin.
+
+# 'interactive' on ainoa käyttäytyminen, joka lukee vihjeet: yrityskertoja on
+# vihjeiden määrä + 1. Sama tehtävälähde toimii sellaisenaan myös kokeessa,
+# jossa vihjeitä ei näytetä lainkaan.
+behaviour: interactive
+grade: 0
+questionsperpage: 1
+attempts: 0
+
+# Ei pisteitä näkyviin: väärä vastaus on palautetta, ei arvosanaa.
+review:
+  during: [correctness, specificfeedback]
+  after: [attempt, correctness, specificfeedback, generalfeedback]
+
+questions:
+  - id: fixture-matka-none
+  - id: fixture-matka-stated
