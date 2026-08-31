@@ -1,0 +1,24 @@
+id: fixture-drillikoe
+name: "Fixture: monivalintadrilli"
+intro: |
+  Tämä koe on testiaineistoa: arvosanaton drillikoe, jossa on yksi kiinteä
+  monivalintatehtävä ja kaksi satunnaisesti pankista poimittavaa.
+
+behaviour: immediatefeedback
+grade: 0
+questionsperpage: 1
+attempts: 0
+grademethod: highest
+
+# A drill shows no marks: without them a wrong answer is feedback, not a
+# score. With grade 0 there is nothing to show anyway.
+review:
+  during: [correctness, specificfeedback]
+  after: [attempt, correctness, specificfeedback, generalfeedback]
+
+questions:
+  - id: fixture-mv-kiehumispiste
+  - random: 1
+    tags: [mv]
+  - random: 1
+    category: [Testi, Monivalinta]

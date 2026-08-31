@@ -1,0 +1,58 @@
+id: fixture-mv-kuvaaja
+type: mcq
+name: "Fixture: mitä kuvaaja väittää (mv)"
+category: [Testi, Monivalinta]
+tags: [fixture, mv, drilli]
+
+seeds: [801, 802, 803]
+shuffle: true
+
+variables: |
+  vvakio : 4;
+  tloppu : 5;
+  sloppu : vvakio * tloppu;
+
+figure:
+  alt: |
+    Matka-aikakuvaaja: origosta lähtevä nouseva suora. Vaaka-akselilla on
+    aika sekunteina ja pystyakselilla matka metreinä.
+  plot: |
+    [[discrete, [[0, 0], [tloppu, sloppu]]]],
+    [x, 0, tloppu], [y, 0, sloppu + 2],
+    [xlabel, "aika (s)"], [ylabel, "matka (m)"]
+
+stem: |
+  Kuvaaja esittää kappaleen kulkemaa matkaa ajan funktiona.
+  Mitä kuvaajasta voi päätellä?
+
+options:
+  - key: tasainen
+    label: "kappale liikkuu tasaisella nopeudella"
+    correct: true
+    why: |
+      Suora, nouseva matkakuvaaja tarkoittaa, että matkaa kertyy joka
+      sekunti yhtä paljon: nopeus on vakio {@vvakio@} m/s.
+  - key: kiihtyy
+    label: "kappaleen nopeus kasvaa koko ajan"
+    why: |
+      Nopeuden kasvu näkyisi matkakuvaajassa ylöspäin jyrkkenevänä käyränä,
+      ei suorana.
+  - key: hidastuu
+    label: "kappaleen nopeus pienenee koko ajan"
+    why: |
+      Hidastuminen näkyisi loivenevana käyränä. Suora kuvaaja kertoo
+      vakionopeudesta.
+  - key: paikallaan
+    label: "kappale on paikallaan"
+    why: |
+      Paikallaan olevan kappaleen matka ei kasva, jolloin kuvaaja olisi
+      vaakasuora.
+  - key: akselit
+    label: "pystyakselilla on nopeus, joka kasvaa tasaisesti"
+    why: |
+      Pystyakselilla on matka metreinä, ei nopeus. Akselien lukeminen
+      ratkaisee, mitä kuvaaja väittää.
+
+feedback: |
+  Suora matkakuvaaja tarkoittaa tasaista nopeutta. Nopeuden suuruus on
+  kuvaajan jyrkkyys: {@sloppu@} m / {@tloppu@} s = {@vvakio@} m/s.

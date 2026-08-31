@@ -1,0 +1,54 @@
+id: fixture-mv-tiheys-pooli
+type: mcq
+name: "Fixture: mitä tiheys kuvaa (mv, pooli)"
+category: [Testi, Monivalinta]
+tags: [fixture, mv, drilli]
+
+seeds: [811, 812, 813]
+show: 4
+
+stem: |
+  Mitä aineen tiheys kuvaa?
+
+options:
+  - key: massa-tilavuus
+    label: "massan ja tilavuuden suhdetta"
+    correct: true
+    why: |
+      Tiheys on massa jaettuna tilavuudella: se kertoo, kuinka paljon
+      massaa mahtuu tilavuusyksikköön.
+  - key: paino
+    label: "kappaleen painoa"
+    why: |
+      Paino on voima, joka riippuu massasta ja putoamiskiihtyvyydestä.
+      Tiheys on aineen ominaisuus, ei yksittäisen kappaleen.
+  - key: massa
+    label: "kappaleen massaa"
+    why: |
+      Massa kasvaa kappaleen koon mukana; tiheys ei, sillä se on massan ja
+      tilavuuden suhde.
+  - key: tilavuus
+    label: "kappaleen tilavuutta"
+    why: |
+      Tilavuus kertoo kappaleen koon. Tiheys kertoo, kuinka paljon massaa
+      siihen kokoon mahtuu.
+  - key: kovuus
+    label: "aineen kovuutta"
+    why: |
+      Kovuus ja tiheys ovat eri ominaisuuksia: esimerkiksi lyijy on
+      pehmeää mutta hyvin tiheää.
+  - key: raskaus
+    label: "sitä, kuinka raskas kappale on nostaa"
+    why: |
+      Nostamisen raskaus riippuu koko kappaleen massasta. Pieni tiheänkin
+      aineen kappale voi olla kevyt nostaa.
+  - key: uppoaminen
+    label: "sitä, uppoaako kappale veteen"
+    why: |
+      Uppoaminen seuraa tiheydestä — vettä tiheämpi uppoaa — mutta tiheys
+      itse on massan ja tilavuuden suhde.
+
+feedback: |
+  Tiheys on massan ja tilavuuden suhde, \(\rho = m/V\). Se on aineen
+  ominaisuus: samasta aineesta tehdyillä eri kokoisilla kappaleilla on
+  sama tiheys.

@@ -1,9 +1,84 @@
 <?php
 // Create or refresh a quiz from a compiled quiz spec (JSON), taking its
-// questions from a question bank activity by their idnumbers.
+// questions from a question bank activity by their idnumbers. A spec entry
+// may also be a random slot, drawing from the bank by category and/or tags.
 
 require_once(__DIR__ . '/lib.php');
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
+
+use mod_quiz\question\bank\filter\custom_category_condition;
+
+/**
+ * Resolve a random-slot entry against the bank: the category path and tag
+ * names become ids, and the pool is counted, returning the filter condition
+ * to persist. Moodle throws notenoughrandomquestions at attempt start when a
+ * pool runs dry, which is the wrong moment to find out; the compiler has
+ * checked the compiled tree, this checks the actual bank.
+ */
+function qbank_random_slot(context_module $bankcontext, array $entry, string $bankname): array {
+    global $DB;
+
+    // No category in the spec means the whole bank: its top category with
+    // subcategories included, which is also how a named category matches the
+    // questions below it.
+    $category = question_get_top_category($bankcontext->id, true);
+    foreach ($entry['category'] ?? [] as $name) {
+        $category = $DB->get_record('question_categories', [
+            'contextid' => $bankcontext->id,
+            'parent' => $category->id,
+            'name' => $name,
+        ]);
+        if (!$category) {
+            cli_error("Random slot: category '{$name}' does not exist in bank '{$bankname}'.");
+        }
+    }
+
+    $filter = [
+        'category' => [
+            'jointype' => custom_category_condition::JOINTYPE_DEFAULT,
+            'values' => [$category->id],
+            'filteroptions' => ['includesubcategories' => true],
+        ],
+    ];
+
+    if (!empty($entry['tags'])) {
+        $known = [];
+        foreach (\core_tag_tag::get_tags_by_area_in_contexts('core_question', 'question', [$bankcontext]) as $tag) {
+            $known[$tag->name] = $tag->id;
+        }
+        $tagids = [];
+        foreach ($entry['tags'] as $name) {
+            $normalised = core_text::strtolower($name);
+            if (!isset($known[$normalised])) {
+                cli_error("Random slot: no question in bank '{$bankname}' is tagged '{$name}'.");
+            }
+            $tagids[] = $known[$normalised];
+        }
+        $filter['qtagids'] = [
+            'jointype' => \qbank_tagquestion\tag_condition::JOINTYPE_DEFAULT,
+            'values' => $tagids,
+        ];
+    }
+
+    $loader = new \core_question\local\bank\random_question_loader(new qubaid_list([]));
+    $pool = $loader->count_filtered_questions($filter);
+    if ($pool < $entry['random']) {
+        cli_error("Random slot draws {$entry['random']} but only {$pool} question(s) "
+            . "in bank '{$bankname}' match its selectors.");
+    }
+
+    return [
+        'count' => (int) $entry['random'],
+        'filtercondition' => [
+            'qpage' => 0,
+            'cat' => "{$category->id},{$bankcontext->id}",
+            'qperpage' => 100,
+            'tabname' => 'questions',
+            'sortdata' => [],
+            'filter' => $filter,
+        ],
+    ];
+}
 
 [$options, $unrecognised] = cli_get_params([
     'spec' => '',
@@ -47,10 +122,14 @@ $course = $DB->get_record('course', ['shortname' => $options['course']], '*', MU
 $bank = qbank_ensure_bank($course, $options['bank'], $options['bank']);
 $bankcontext = context_module::instance($bank->id);
 
-// Resolve every question up front, so a typo in the spec fails before we
-// create anything.
+// Resolve every question and random-slot pool up front, so a typo in the
+// spec fails before we create anything.
 $entries = [];
 foreach ($spec['questions'] as $entry) {
+    if (isset($entry['random'])) {
+        $entries[] = [qbank_random_slot($bankcontext, $entry, $options['bank']), (float) $entry['maxmark']];
+        continue;
+    }
     $found = qbank_find_entry($bankcontext->id, $entry['id']);
     if (!$found) {
         cli_error("Question '{$entry['id']}' is not in bank '{$options['bank']}'; import the questions first.");
@@ -94,7 +173,7 @@ $moduleinfo = (object) array_merge((array) get_config('quiz'), $review, [
     'questionsperpage' => $spec['questionsperpage'],
     'attempts' => $spec['attempts'],
     'grademethod' => $spec['grademethod'] === 'highest' ? QUIZ_GRADEHIGHEST : QUIZ_GRADEAVERAGE,
-    'grade' => 10,
+    'grade' => $spec['grade'],
     'sumgrades' => 0,
     'timeopen' => 0,
     'timeclose' => 0,
@@ -143,6 +222,23 @@ foreach ($structure->get_slots() as $slot) {
 }
 
 foreach ($entries as [$entry, $maxmark]) {
+    if (is_array($entry)) {
+        // A random slot. The structure is re-created per call because the
+        // explicit adds beside it bypass it and would leave it stale.
+        $structure = \mod_quiz\quiz_settings::create($quiz->id)->get_structure();
+        $structure->add_random_questions(0, $entry['count'], $entry['filtercondition']);
+        if ($maxmark != 1.0) {
+            // Random slots always insert with maxmark 1. No attempts exist
+            // (checked above), so the field can be set directly; the sum is
+            // recomputed below.
+            $slots = $DB->get_records('quiz_slots', ['quizid' => $quiz->id],
+                'slot DESC', 'id', 0, $entry['count']);
+            foreach ($slots as $slot) {
+                $DB->set_field('quiz_slots', 'maxmark', $maxmark, ['id' => $slot->id]);
+            }
+        }
+        continue;
+    }
     $questionid = qbank_latest_questionid($entry->id);
     quiz_add_quiz_question($questionid, $quiz, 0, $maxmark);
 }

@@ -213,11 +213,16 @@ class Question:
     category: list[str]
     variables: str
     stem: str
-    answer: dict
+    answer: dict | None = None
     figure: Figure | None = None
     scaffold: str = "none"
     interpretation: dict | None = None
     readings: list[Reading] = field(default_factory=list)
+    # type: mcq. Options reuse the Reading shape: key/label/why as for
+    # readings, intended = correct, value unused.
+    options: list[Reading] = field(default_factory=list)
+    shuffle: bool = True
+    show: int = 0  # options shown per variant; 0 = all of them
     general_feedback: str = ""
     note: str = ""
     tags: list[str] = field(default_factory=list)
@@ -469,6 +474,85 @@ def load_question(path: Path, source: dict, sourceroot: Path) -> Question:
     )
 
 
+def load_mcq_question(path: Path, source: dict, sourceroot: Path) -> Question:
+    """Validate a multiple-choice question (type: mcq).
+
+    The options become a STACK radio input whose teacher answer is a list of
+    [key, correct, label] triples. Shuffling and the distractor-pool draw
+    ('show:') both run in question variables, so either makes the question
+    random and seeds become required, per the existing rule.
+    """
+    qid = str(require(path, source, "id"))
+    if not ID_RE.match(qid):
+        fail(path, f"id '{qid}' must be lowercase kebab-case")
+
+    category = require(path, source, "category")
+    if not isinstance(category, list) or not category:
+        fail(path, "'category' must be a non-empty list of category names")
+
+    entries = require(path, source, "options")
+    if not isinstance(entries, list) or len(entries) < 2:
+        fail(path, "'options' must be a list of at least two options")
+    options: list[Reading] = []
+    for entry in entries:
+        # Option keys are the analysis vocabulary, so they follow the id
+        # convention; unlike reading keys they never become variable names,
+        # only Maxima strings, so kebab-case is safe.
+        key = str(entry.get("key", ""))
+        if not ID_RE.match(key):
+            fail(path, f"option key '{key}' must be lowercase kebab-case")
+        if any(option.key == key for option in options):
+            fail(path, f"duplicate option key '{key}'")
+        for wanted in ("label", "why"):
+            if not str(entry.get(wanted, "")).strip():
+                fail(path, f"option '{key}' needs a '{wanted}'")
+        options.append(Reading(
+            key=key,
+            label=" ".join(str(entry["label"]).split()),
+            value="",
+            intended=bool(entry.get("correct", False)),
+            why=str(entry["why"]).strip(),
+        ))
+    if sum(option.intended for option in options) != 1:
+        fail(path, "exactly one option must be marked 'correct: true'")
+
+    shuffle = bool(source.get("shuffle", True))
+    show = source.get("show", 0)
+    if "show" in source:
+        if not isinstance(show, int) or not 2 <= show < len(options):
+            fail(path, "'show' must be an integer at least 2 and smaller than "
+                       "the option count (omit it to show every option)")
+
+    if (shuffle or show or "rand" in str(source.get("variables", ""))) \
+            and not source.get("seeds"):
+        fail(path, "randomised questions need a 'seeds' list of deployed seeds")
+
+    stem = str(require(path, source, "stem"))
+    check_prose(path, "stem", stem)
+    check_prose(path, "feedback", source.get("feedback", ""))
+    for option in options:
+        check_prose(path, f"option '{option.key}'", option.label + option.why)
+
+    return Question(
+        path=path,
+        id=qid,
+        name=str(require(path, source, "name")),
+        category=[str(part) for part in category],
+        variables=str(source.get("variables", "")).strip(),
+        stem=stem,
+        figure=load_figure(path, source, sourceroot),
+        options=options,
+        shuffle=shuffle,
+        show=show,
+        general_feedback=source.get("feedback", ""),
+        note=source.get("note", ""),
+        tags=[str(tag) for tag in source.get("tags", [])],
+        seeds=[int(seed) for seed in source.get("seeds", [])],
+        grade=float(source.get("grade", 1.0)),
+        penalty=float(source.get("penalty", 0.1)),
+    )
+
+
 def load_aitext_question(path: Path, source: dict) -> dict:
     """Validate an aitext drilling question and return its spec.
 
@@ -653,10 +737,42 @@ def dropdown_teacher_answer(question: Question) -> str:
     return f"ta_interp : [{options}];"
 
 
+def mcq_teacher_answer(question: Question) -> str:
+    """Maxima defining ta_mcq, the [key, correct, label] triples the radio
+    shows, in shown order. A pool keeps the full authored list and draws the
+    shown keys per variant, the correct one always included; shuffling then
+    permutes. Labels go through castext() so LaTeX in options works."""
+    triples = ",\n  ".join(
+        f"[{maxima_string(option.key)}, {'true' if option.intended else 'false'}, "
+        f"castext({maxima_string(option.label)})]"
+        for option in question.options
+    )
+    if question.show:
+        correct = next(option for option in question.options if option.intended)
+        distractors = ", ".join(
+            maxima_string(option.key) for option in question.options if not option.intended
+        )
+        lines = [
+            f"ta_mcq_all : [\n  {triples}\n];",
+            f"ta_mcq_keys : append([{maxima_string(correct.key)}], "
+            f"rand_selection([{distractors}], {question.show - 1}));",
+            "ta_mcq : sublist(ta_mcq_all, lambda([ex], member(first(ex), ta_mcq_keys)));",
+        ]
+    else:
+        lines = [f"ta_mcq : [\n  {triples}\n];"]
+    if question.shuffle:
+        lines.append("ta_mcq : random_permutation(ta_mcq);")
+    return "\n".join(lines)
+
+
 def question_variables(question: Question) -> str:
-    parts = [question.variables, answer_expressions(question)]
-    if question.scaffold == "choice":
-        parts.append(dropdown_teacher_answer(question))
+    parts = [question.variables]
+    if question.options:
+        parts.append(mcq_teacher_answer(question))
+    else:
+        parts.append(answer_expressions(question))
+        if question.scaffold == "choice":
+            parts.append(dropdown_teacher_answer(question))
     if question.figure and question.figure.plot:
         parts.append(DECIMAL_COMMA)
     return "\n".join(part for part in parts if part)
@@ -687,6 +803,10 @@ def stem_html(question: Question) -> str:
     if question.figure:
         parts.append(figure_html(question.figure))
 
+    if question.options:
+        parts.append("<p>[[input:ans1]] [[validation:ans1]]</p>")
+        return "\n".join(parts)
+
     if question.scaffold == "stated":
         intended = next(r for r in question.readings if r.intended)
         prefix = question.interpretation["stated_prefix"]
@@ -704,6 +824,18 @@ def stem_html(question: Question) -> str:
 
 
 def input_elements(question: Question) -> str:
+    if question.options:
+        # Radio renders no validation, but STACK still requires exactly one
+        # [[validation:...]] per input; showvalidation 0, as for the dropdown.
+        return render_input(
+            name="ans1",
+            itype="radio",
+            tans="ta_mcq",
+            boxsize=0,
+            mustverify=0,
+            showvalidation=0,
+        )
+
     xml = ""
 
     if question.scaffold == "choice":
@@ -880,6 +1012,13 @@ def render_prt(name: str, value: float, nodes: str, feedbackvariables: str = "")
 
 
 def prt_elements(question: Question) -> str:
+    if question.options:
+        # One node per option: per-distractor feedback ('why:') and a
+        # distinct answer note per option, exactly as for readings.
+        return render_prt("ans", 1.0, reading_nodes(
+            "ans", "String", "ans1", lambda r: maxima_string(r.key), "", question.options
+        ))
+
     weight = float(question.interpretation.get("weight", 0.5)) if question.scaffold == "choice" else 0.0
     answertest, defaulttolerance = ANSWER_TESTS[question.answer.get("type", "algebraic")]
     testoptions = str(question.answer.get("tolerance", defaulttolerance))
@@ -964,6 +1103,23 @@ def qtest_elements(question: Question) -> str:
     misreading is tested both ways: selected and executed correctly (full
     answer credit, reading credit lost), and answered without being selected
     (named by the answer tree)."""
+    if question.options:
+        # Test input values are CAS expressions mapped to whatever position
+        # the key holds in the variant, so per-option tests hold at every
+        # seed -- except under a pool, where a hidden key is an invalid
+        # response. A pooled question therefore tests only the correct key
+        # (always shown); the distractor key -> note -> why mapping is
+        # covered by the compiler's own tests instead.
+        correct = next(option for option in question.options if option.intended)
+        cases = [(maxima_string(correct.key), None, 1.0, "ans-0-T", None, None)]
+        if not question.show:
+            cases += [
+                (maxima_string(option.key), None, 0.0, f"ans-{offset + 1}-T", None, None)
+                for offset, option in enumerate(
+                    option for option in question.options if not option.intended)
+            ]
+        return render_qtests(cases, question.penalty)
+
     misreadings = [r for r in question.readings if not r.intended]
     strict = strict_units(question)
     first_misreading = 2 if strict else 1
@@ -985,6 +1141,10 @@ def qtest_elements(question: Question) -> str:
         for offset, reading in enumerate(misreadings):
             cases.append((f"ta_{reading.key}", None, 0.0, f"ans-{offset + first_misreading}-T", None, None))
 
+    return render_qtests(cases, question.penalty)
+
+
+def render_qtests(cases: list[tuple], penalty: float) -> str:
     xml = ""
     for number, (value, chosen, score, note, iscore, inote) in enumerate(cases, start=1):
         inputs = f"      <testinput>\n        <name>ans1</name>\n        <value>{value}</value>\n      </testinput>\n"
@@ -1001,7 +1161,7 @@ def qtest_elements(question: Question) -> str:
             "      <expected>\n"
             f"        <name>{name}</name>\n"
             f"        <expectedscore>{s:.7f}</expectedscore>\n"
-            f"        <expectedpenalty>{0.0 if s == 1.0 else question.penalty:.7f}</expectedpenalty>\n"
+            f"        <expectedpenalty>{0.0 if s == 1.0 else penalty:.7f}</expectedpenalty>\n"
             f"        <expectedanswernote>{n}</expectedanswernote>\n"
             "      </expected>\n"
             for name, s, n in expectations
@@ -1020,6 +1180,11 @@ def render_question(question: Question, stackversion: str) -> str:
         items = "".join(f"      <tag><text>{escape(tag)}</text></tag>\n" for tag in question.tags)
         tags = f"    <tags>\n{items}    </tags>\n"
 
+    # The note identifies a variant; for an MCQ that is the shown keys in
+    # shown order, which is what makes subset and order seed-recoverable.
+    note = question.note or (
+        "{@maplist(first, ta_mcq)@}" if question.options else "{@ta@}")
+
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         "<quiz>\n"
@@ -1035,7 +1200,7 @@ def render_question(question: Question, stackversion: str) -> str:
         + f"    <stackversion>\n      <text>{stackversion}</text>\n    </stackversion>\n"
         + f"    <questionvariables>\n      <text>{cdata(question_variables(question))}</text>\n    </questionvariables>\n"
         + text_element("specificfeedback", "<p>[[feedback:ans]]</p>")
-        + f'    <questionnote format="moodle_auto_format">\n      <text>{cdata(question.note or "{@ta@}")}</text>\n    </questionnote>\n'
+        + f'    <questionnote format="moodle_auto_format">\n      <text>{cdata(note)}</text>\n    </questionnote>\n'
         + '    <questiondescription format="moodle_auto_format">\n      <text></text>\n    </questiondescription>\n'
         + element("questionsimplify", 1)
         + element("assumepositive", 0)
@@ -1076,11 +1241,16 @@ def load_quiz(path: Path, source: dict) -> dict:
             fail(path, f"review {phase} must be 'all' or a list from: {', '.join(REVIEW_PARTS)}")
         review[phase] = parts
 
+    grade = float(source.get("grade", 10))
+    if grade < 0:
+        fail(path, "'grade' must be a number >= 0 (0 means no gradebook item)")
+
     quiz = {
         "id": str(require(path, source, "id")),
         "name": str(require(path, source, "name")),
         "intro": to_html(source.get("intro", "")),
         "behaviour": behaviour,
+        "grade": grade,
         "questionsperpage": int(source.get("questionsperpage", 1)),
         "attempts": int(source.get("attempts", 0)),
         "grademethod": source.get("grademethod", "highest"),
@@ -1088,10 +1258,46 @@ def load_quiz(path: Path, source: dict) -> dict:
         "questions": [],
     }
     for entry in require(path, source, "questions"):
-        quiz["questions"].append(
-            {"id": str(entry["id"]), "maxmark": float(entry.get("maxmark", 1.0))}
-        )
+        if "random" in entry:
+            count = entry["random"]
+            if not isinstance(count, int) or count < 1:
+                fail(path, "'random' must be a positive integer")
+            tags = [str(tag) for tag in entry.get("tags", [])]
+            category = entry.get("category")
+            if category is not None and (not isinstance(category, list) or not category):
+                fail(path, "a random entry's 'category' must be a non-empty list "
+                           "of category names")
+            if not tags and not category:
+                fail(path, "a random entry needs 'tags', 'category' or both")
+            quiz["questions"].append({
+                "random": count,
+                "tags": tags,
+                "category": [str(part) for part in category] if category else None,
+                "maxmark": float(entry.get("maxmark", 1.0)),
+            })
+        else:
+            quiz["questions"].append(
+                {"id": str(entry["id"]), "maxmark": float(entry.get("maxmark", 1.0))}
+            )
     return quiz
+
+
+def random_pool(entry: dict, questions: dict[str, Question], aitext: dict[str, dict]) -> int:
+    """How many compiled questions a random entry's selectors match.
+
+    Mirrors what the built filter condition does at the Moodle end: tags are
+    AND-joined, and a category selector matches the category itself and its
+    subcategories. Moodle refuses an attempt when a random slot's pool runs
+    out, so a draw larger than the pool is refused here, where the mistake is
+    still cheap. build-quiz.php re-checks against the actual bank.
+    """
+    def matches(category: list[str], tags: list[str]) -> bool:
+        if entry["category"] and category[:len(entry["category"])] != entry["category"]:
+            return False
+        return all(tag in tags for tag in entry["tags"])
+
+    return sum(matches(q.category, q.tags) for q in questions.values()) + \
+        sum(matches(spec["category"], spec["tags"]) for spec in aitext.values())
 
 
 def manifest_entry(qid: str, path: Path, sourceroot: Path, target: Path, out: Path,
@@ -1142,9 +1348,12 @@ def compile_tree(source: Path, out: Path, stackversion: str, provenance: dict) -
             aitext[spec["id"]] = spec
             sources[spec["id"]] = path
             continue
-        if qtype != "stack":
+        if qtype == "mcq":
+            question = load_mcq_question(path, data, source)
+        elif qtype == "stack":
+            question = load_question(path, data, source)
+        else:
             fail(path, f"unknown question type '{qtype}'")
-        question = load_question(path, data, source)
         if question.id in questions or question.id in aitext:
             fail(path, f"id '{question.id}' already in use")
         questions[question.id] = question
@@ -1152,7 +1361,13 @@ def compile_tree(source: Path, out: Path, stackversion: str, provenance: dict) -
 
     for quiz in quizzes:
         for entry in quiz["questions"]:
-            if entry["id"] not in questions and entry["id"] not in aitext:
+            if "random" in entry:
+                pool = random_pool(entry, questions, aitext)
+                if pool < entry["random"]:
+                    raise SourceError(
+                        f"quiz '{quiz['id']}': random slot draws {entry['random']} "
+                        f"but only {pool} compiled question(s) match its selectors")
+            elif entry["id"] not in questions and entry["id"] not in aitext:
                 raise SourceError(f"quiz '{quiz['id']}' refers to unknown question '{entry['id']}'")
 
     # Start from a clean tree so that renamed or deleted sources cannot leave

@@ -13,7 +13,7 @@ cd "$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 mkdir -p "${QBANK_BUILD_DIR:-./.generated/qbank}"
 
 dc build qbank-tools
-for test in test_provenance.py test_figures.py; do
+for test in test_provenance.py test_figures.py test_mcq.py; do
   dc run --rm --user "$(id -u):$(id -g)" --entrypoint python3 qbank-tools \
     "/opt/qbank/tests/$test"
 done

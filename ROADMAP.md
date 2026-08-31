@@ -91,6 +91,17 @@ in place. Briefs in `notes/`.
       every CAS-generated plot was silently dropped on arrival;
       `stack-init.sh` creates them and clears the CAS cache, and
       `smoke-tests.sh` asserts they are writable.
+- [x] TASK-06 (`notes/TASK-06-mcq.md`): done 2026-08-31. Multiple-choice
+      questions as `type: mcq` — a STACK `radio` over named options, one PRT
+      node per option, so the attempt data records which distractor was
+      chosen rather than just "wrong", and each option's `why:` names the
+      misunderstanding back to the student. `shuffle:` (default true) and
+      `show: k` (draw k−1 distractors, correct one always shown) randomise
+      per variant; both require deployed seeds, and the question note records
+      the shown keys in shown order so a variant is recoverable from its
+      seed. Quizzes take `grade:` (0 = ungraded, no gradebook item) and may
+      draw random slots from the bank by `tags:` and/or `category:`, with the
+      pool checked against both the compiled tree and the actual bank.
 
 ## M6 — Operational trust
 
@@ -156,4 +167,4 @@ content-creation phase, so this fits in the next few weeks):
   repos) — the TASK-02 question type and its companion plugin.
 - `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
 - `infra/BACKUP.md` — backup/restore architecture and runbooks.
-- `notes/` — task briefs for upcoming work (TASK-01 to TASK-05).
+- `notes/` — task briefs for upcoming work (TASK-01 to TASK-06).

@@ -1,0 +1,41 @@
+id: fixture-mv-kiehumispiste
+type: mcq
+name: "Fixture: veden kiehumispiste (mv)"
+category: [Testi, Monivalinta]
+tags: [fixture, mv, drilli]
+
+# Numerically ordered options: shuffling would only obscure the scale, so the
+# question is not randomised and needs no seeds.
+shuffle: false
+
+stem: |
+  Missä lämpötilassa vesi kiehuu normaalissa ilmanpaineessa?
+
+options:
+  - key: c-50
+    label: "50 °C"
+    why: |
+      Vesi höyrystyy pinnaltaan kaikissa lämpötiloissa, mutta kiehuminen
+      alkaa normaalipaineessa vasta 100 °C:ssa.
+  - key: c-90
+    label: "90 °C"
+    why: |
+      Lähellä, mutta normaalipaineessa kiehuminen alkaa vasta 100 °C:ssa.
+      Alemmassa paineessa, esimerkiksi vuoristossa, vesi kiehuu alle
+      100 °C:ssa.
+  - key: c-100
+    label: "100 °C"
+    correct: true
+    why: |
+      Normaalissa ilmanpaineessa vesi kiehuu 100 °C:ssa; Celsius-asteikko
+      on alun perin kiinnitetty veden jäätymis- ja kiehumispisteeseen.
+  - key: c-110
+    label: "110 °C"
+    why: |
+      Normaalipaineessa nestemäinen vesi ei lämpene yli 100 °C:n:
+      lisälämpö kuluu höyrystymiseen. Painekattilassa kiehumispiste
+      nousee yli 100 °C:n.
+
+feedback: |
+  Normaalissa ilmanpaineessa vesi kiehuu 100 °C:ssa. Kiehumispiste riippuu
+  paineesta: pienemmässä paineessa se on matalampi, suuremmassa korkeampi.

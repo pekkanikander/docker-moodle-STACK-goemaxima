@@ -170,9 +170,11 @@ conversion, instead of passing silently or failing bare. Set `strict: false`
 to accept any compatible unit for full marks, for questions where the student
 chooses the unit; the prompt should then say so.
 
-Randomised questions must list `seeds:`. Without deployed seeds a question has
-no fixed set of variants and its tests only ever exercise whichever one comes
-up, so `tools/qbank.sh test` would not be a real gate.
+Randomised questions must list `seeds:` — a question whose `variables:` use
+`rand()`, and an MCQ that shuffles or draws from a pool. Without deployed
+seeds a question has no fixed set of variants and its tests only ever
+exercise whichever one comes up, so `tools/qbank.sh test` would not be a
+real gate.
 
 ## Figures
 
@@ -309,6 +311,69 @@ visible in the score itself, not only in the feedback.
 The answer is not graded until a reading has been selected —
 the student must commit to a reading first.
 
+## Multiple-choice questions (mcq)
+
+A file with `type: mcq` compiles to a STACK question whose only input is a
+`radio` over named options. The option keys, not letters or positions, are
+what attempt data records, so the distractors are the analysis vocabulary:
+each one carries a hypothesis about a misunderstanding, and its `why:` names
+it back to the student.
+
+```yaml
+id: mv-nopeus-kasite-01
+type: mcq
+name: "Mitä nopeus kuvaa"
+category: [Fysiikka, Liike]
+tags: [fysiikka, liike, drilli]
+seeds: [101, 102, 103]        # required iff shuffle or show
+shuffle: true                 # default true; false keeps the authored order
+show: 4                       # optional: options shown per variant; the
+                              # correct one is always among them
+
+stem: |
+  Nopeus kuvaa
+
+options:
+  - key: liike                # lowercase kebab-case, stable
+    label: "liikkeen suuruutta"
+    correct: true             # exactly one
+    why: |
+      Shown when this option is chosen.
+  - key: matka
+    label: "kuljettua matkaa"
+    why: |
+      Required on every option: names the misunderstanding.
+
+feedback: |
+  Worked explanation, shown after the attempt.
+```
+
+Grading is one node per option: choosing a distractor lands on its own
+answer note with its `why:`, so every choice is machine-coded data, not
+just "wrong". Labels are CASText, so LaTeX in options works; `figure:` and
+`variables:` are available as for any question — an MCQ about a graph is
+expected.
+
+`shuffle:` and the pool draw both run in the question variables
+(`random_permutation()`, `rand_selection()`), so either makes the question
+random and `seeds:` required. Each deployed seed fixes one shown subset and
+order, and the generated question note records the shown keys in shown
+order — both are recoverable from the seed, which the analysis of
+chosen-distractor distributions needs. `show: k` shows the correct option
+and k−1 of the distractors, drawn per variant; it must be at least 2 and
+smaller than the option count. `shuffle: false` without `show:` is not
+random and needs no seeds; use it when the option order carries meaning,
+such as an ordered scale.
+
+What the test gate covers: for an unpooled MCQ the generated question tests
+submit every option key and assert its score and answer note, at every
+deployed seed. Under a pool a hidden key is an invalid response, so the
+generated test covers only the correct key, which every variant shows; the
+distractor key → note → `why:` mapping is mechanically generated and covered
+by the compiler's own tests (`qbank/tests/test_mcq.py`) instead. What no
+machine test covers is a `why:` that mismatches its label — that stays a
+review step.
+
 ## AI-graded explanation questions (aitext)
 
 A file with `type: aitext` is an explanation question graded by an LLM
@@ -393,6 +458,7 @@ name: "Physics practice exam 1"
 intro: |
   Prose shown on the quiz front page.
 behaviour: adaptive             # see below
+grade: 10                       # default 10; 0 = ungraded, no gradebook item
 questionsperpage: 1
 attempts: 0                     # 0 = unlimited
 grademethod: highest            # highest | average
@@ -405,12 +471,47 @@ questions:
   - id: motion-average-speed-01
   - id: motion-distance-02
     maxmark: 2                  # default 1
+  - random: 5                   # a random slot: draw 5 per attempt
+    tags: [drilli, liike]       # AND: a question must carry all of them
+    category: [Fysiikka, Liike] # this category and everything below it
+    maxmark: 1                  # default 1
+```
+
+A `random:` entry is a random slot: each attempt draws that many questions
+from the bank among those matching the selectors — `tags:` (all of them),
+`category:` (the named path and everything below it), or both; at least one
+is required. A question already used earlier in the same attempt, explicit
+slots included, is never drawn again, so the matching pool must cover the
+overlapping explicit slots plus every draw: Moodle refuses to start an
+attempt on an exhausted pool. A draw larger than the pool is refused twice
+before that, by the compiler against the compiled tree and by
+`build-quiz.php` against the actual bank.
+
+`grade: 0` makes the quiz ungraded: no gradebook item is created. The drill
+recipe is exactly that — ungraded, immediate feedback, no marks shown, a
+random slot over the drill tags (see `qbank/fixtures/quizzes/drillikoe.yaml`):
+
+```yaml
+behaviour: immediatefeedback    # check once, see the feedback, move on
+grade: 0
+review:
+  during: [correctness, specificfeedback]   # no marks: feedback, not score
+  after: [attempt, correctness, specificfeedback, generalfeedback]
+questions:
+  - random: 5
+    tags: [drilli]
 ```
 
 `behaviour: adaptive` is what makes STACK grade each part of a question on its
 own as the student presses *Check* — which is what the interpretation scaffold
 needs. (STACK swaps in its `adaptivemultipart` behaviour internally; that name
-cannot be given here, as Moodle only accepts archetypal behaviours.)
+cannot be given here, as Moodle only accepts archetypal behaviours.) It also
+lets the student revise an answer and check again, against a penalty. Under
+`immediatefeedback` the answer locks on the first *Check*: for an MCQ, free
+retries would make clicking through the options a winning strategy, so the
+retry is the next attempt at the whole quiz, on a fresh variant. Note that
+`interactive` allows hints + 1 tries and the compiler emits no hints, so it
+currently behaves like `immediatefeedback`.
 
 `review:` says what the student is shown: `during` while answering, `after`
 when looking at a submitted attempt. Each takes `all` or a list drawn from
