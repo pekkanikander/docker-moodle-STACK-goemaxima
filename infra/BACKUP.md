@@ -89,11 +89,12 @@ After any restore; mandatory when compromise is suspected. In the admin UI:
 1. Site administrators (*Users → Permissions → Site administrators*): only
    the expected account.
 2. User list (*Users → Browse list of users*): no unexpected accounts, and
-   every account authenticates via "Manual accounts".
+   every account authenticates via an expected method ("Manual accounts",
+   or "OAuth 2" for SSO-linked accounts — see `infra/hetzner/DEPLOY.md` §8).
 3. Web-service tokens (*Server → Web services → Manage tokens*): none.
 4. Authentication plugins (*Plugins → Authentication*): only "Manual
-   accounts" enabled, and the site posture checks in
-   `infra/hetzner/DEPLOY.md` §7 still pass.
+   accounts" and "OAuth 2" enabled — never "No authentication" — and the
+   site posture checks in `infra/hetzner/DEPLOY.md` §7 still pass.
 5. Outgoing-mail settings unchanged (*Server → Email*), the
    `divertallemailsto` diversion included.
 

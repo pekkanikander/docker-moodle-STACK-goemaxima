@@ -16,7 +16,7 @@ on run
 
 	set enginePid to do shell script "cd " & quoted form of repoRoot & " && mkdir -p .generated && rm -f " & quoted form of exitFile & "; ( ./tools/start.sh > " & quoted form of logFile & " 2>&1; echo $? > " & quoted form of exitFile & " ) > /dev/null 2>&1 & echo $!"
 
-	set progress total steps to 7
+	set progress total steps to 8
 	set progress completed steps to 0
 	set progress description to "Setting up Moodle"
 	set progress additional description to "Starting. The first run can take several minutes."
@@ -39,8 +39,8 @@ on run
 	end try
 
 	if exitText is "0" then
-		set progress completed steps to 7
-		display dialog "Moodle is ready." & return & return & "Log in with:" & return & "    username:  admin" & return & "    password:  Change-me!" & return & return & "You will be asked to choose a new password at first login." buttons {"OK"} default button "OK"
+		set progress completed steps to 8
+		display dialog "Moodle is ready." & return & return & "Log in with:" & return & "    username:  admin" & return & "    password:  (leave empty)" & return & return & "This local instance is passwordless; it only listens on this machine." buttons {"OK"} default button "OK"
 	else
 		-- a nonzero exit, or the 2 h timeout (exit file never appeared)
 		do shell script "pkill -TERM -P " & enginePid & " 2>/dev/null; kill -TERM " & enginePid & " 2>/dev/null; true"

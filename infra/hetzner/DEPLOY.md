@@ -104,6 +104,7 @@ docker compose --env-file .env.versions --env-file .env up -d
 ./init/scripts/lang-init.sh        # language packs + default language
 ./init/scripts/mail-init.sh        # noreply address + SMTP target from .env
 ./init/scripts/stack-init.sh
+./init/scripts/auth-init.sh        # SSO posture: no account creation, OAuth 2 on
 MOODLE_HTTP_PORT=8000 ./init/scripts/smoke-tests.sh
 ```
 
@@ -163,14 +164,20 @@ mailbox; for this site that is a feature, not a bug.
 
 ## 7. Site posture checks (go-live policy)
 
-Verify rather than trust (`moodle-init.sh` hides the guest login button;
-self-registration is off by Moodle default, not set explicitly):
+`smoke-tests.sh` asserts all of these on every run (and additionally that
+`auth_none` is disabled and no active account accepts an empty password on a
+non-loopback wwwroot, and that no published port has a wildcard listener).
+To verify by hand (`moodle-init.sh` hides the guest login button;
+self-registration is off by Moodle default, not set explicitly;
+`auth-init.sh` prevents account creation at login):
 
 ```sh
 docker compose --env-file .env.versions --env-file .env exec -T moodle \
   php /var/www/html/admin/cli/cfg.php --name=registerauth        # must be empty (no self-registration)
 docker compose --env-file .env.versions --env-file .env exec -T moodle \
   php /var/www/html/admin/cli/cfg.php --name=guestloginbutton    # 0 = hidden
+docker compose --env-file .env.versions --env-file .env exec -T moodle \
+  php /var/www/html/admin/cli/cfg.php --name=authpreventaccountcreation  # 1 = logins never create accounts
 ```
 
 `lang-init.sh` sets these:
@@ -184,7 +191,45 @@ docker compose --env-file .env.versions --env-file .env exec -T moodle \
 
 Accounts are created manually in the admin UI (*Site administration → Users*).
 
-## 8. Enable the AI provider (Anthropic Claude)
+## 8. Enable Google sign-in (SSO)
+
+`auth-init.sh` enables the OAuth 2 auth plugin and sets
+`authpreventaccountcreation`, so a Google login succeeds only when its email
+matches a pre-created account; anything else is refused. The issuer itself is
+configured in the admin UI — the client ID/secret live in the Moodle database
+only, never in the repo or `.env` (same policy as the Anthropic API key).
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create
+   (or reuse) a project, configure the OAuth consent screen, and create an
+   OAuth client ID of type *Web application* with authorised redirect URI
+   `https://oivus.pnr.iki.fi/admin/oauth2callback.php`. (Re-register at the
+   `oivus.fi` move.)
+
+2. In Moodle (*Site administration → Server → OAuth 2 services*,
+   `/admin/tool/oauth2/issuers.php`), *Create new service: Google*. Paste the
+   client ID and secret, keep *Show on login page* as "Login page", and
+   **untick "Require email verification"**: with `divertallemailsto` set,
+   verification mail never reaches the student, and it is redundant here —
+   Google only asserts addresses it has verified, and unknown addresses are
+   refused by `authpreventaccountcreation`.
+
+3. Ensure the student's Moodle account email is exactly their Google address
+   (*Site administration → Users*). The first Google login then auto-links to
+   that account; the account keeps its role and enrolments.
+
+4. Test: log out; the login page shows a Google button; sign in as the
+   student.
+
+5. Optional, after a successful Google login: set the account's
+   authentication method to *OAuth 2* on the user's edit page to retire the
+   site-local password entirely (password login stops working for that
+   account).
+
+A local instance can mirror this with redirect URI
+`http://localhost:8000/admin/oauth2callback.php` (Google accepts plain-http
+localhost); rarely worth it, as localhost login is passwordless anyway.
+
+## 9. Enable the AI provider (Anthropic Claude)
 
 In the admin UI (*Site administration → AI → AI providers*), add a
 "Claude API Provider" instance, paste the Anthropic API key, set an explicit
@@ -198,7 +243,7 @@ database dumps (see `infra/BACKUP.md`); treat those accordingly.
 
 Done on oivus.pnr.iki.fi 2026-08-26.
 
-## 9. Verify end-to-end
+## 10. Verify end-to-end
 
 - https://oivus.pnr.iki.fi loads the login page with a valid certificate.
 - Log in as admin; *Site administration → Plugins → Question types → STACK*
@@ -211,8 +256,8 @@ An installed server is updated by checking out the new commit and running
 update path (below) use that same script; it performs a database backup,
 re-runs `server-bootstrap.sh` (as root: Caddyfile, backup units,
 `.env.versions`, image build), then `up -d`, `upgrade.php`, the idempotent
-`lang-init.sh`, `mail-init.sh` and `stack-init.sh` (the same convergence
-`tools/start.sh` runs locally), the smoke tests, and an external check of the
+`lang-init.sh`, `mail-init.sh`, `stack-init.sh` and `auth-init.sh` (the same
+convergence `tools/start.sh` runs locally), the smoke tests, and an external check of the
 public site URL. It fails fast and leaves state in place for manual
 investigation.
 
