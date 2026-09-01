@@ -161,9 +161,9 @@ content-creation phase, so this fits in the next few weeks):
 ## M7 — Possible extensions (not planned yet)
 
 - Access for other homeschool families: remove the staging
-  `divertallemailsto` diversion — and, with it, give the admin account a real
-  address, since it is still `admin@example.com` and only the diversion makes
-  its notifications arrive — GDPR/privacy notice, account provisioning
+  `divertallemailsto` diversion (the admin account has a real address as of
+  2026-09-01, so teacher notifications survive the removal; `supportemail` is
+  still `admin@example.com`), GDPR/privacy notice, account provisioning
   policy.
 - Windows support for the no-terminal local setup (`tools/start.sh` stays
   POSIX; a Windows launcher is needed).
