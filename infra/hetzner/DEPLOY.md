@@ -94,6 +94,9 @@ On the VM (`ssh moodle-hetzner`), edit `/opt/moodle-stack/.env` (nano or vi):
   so Mailpit does not run)
 - `MOODLE_LANGPACKS` (e.g. `fi`) and `MOODLE_LANG` (fallback, `en`); `.env.example`
   installs no packs, so this must be set here to get anything but English
+- `MOODLE_ENV_LABEL` and `MOODLE_ENV_COLOUR` (page tint and corner badge
+  marking the environment; `STAGING` and `#b26a00` on this server, empty
+  label on production)
 
 Then:
 
@@ -105,6 +108,7 @@ docker compose --env-file .env.versions --env-file .env up -d
 ./init/scripts/mail-init.sh        # noreply address + SMTP target from .env
 ./init/scripts/stack-init.sh
 ./init/scripts/auth-init.sh        # SSO posture: no account creation, OAuth 2 on
+./init/scripts/appearance-init.sh  # environment tint and badge from .env
 MOODLE_HTTP_PORT=8000 ./init/scripts/smoke-tests.sh
 ```
 
@@ -256,10 +260,10 @@ An installed server is updated by checking out the new commit and running
 update path (below) use that same script; it performs a database backup,
 re-runs `server-bootstrap.sh` (as root: Caddyfile, backup units,
 `.env.versions`, image build), then `up -d`, `upgrade.php`, the idempotent
-`lang-init.sh`, `mail-init.sh`, `stack-init.sh` and `auth-init.sh` (the same
-convergence `tools/start.sh` runs locally), the smoke tests, and an external check of the
-public site URL. It fails fast and leaves state in place for manual
-investigation.
+`lang-init.sh`, `mail-init.sh`, `stack-init.sh`, `auth-init.sh` and
+`appearance-init.sh` (the same convergence `tools/start.sh` runs locally), the
+smoke tests, and an external check of the public site URL. It fails fast and
+leaves state in place for manual investigation.
 
 Do NOT run `moodle-init.sh` on an installed site. It deletes `config.php` from
 both the container and `moodledata` before running the installer, so it destroys

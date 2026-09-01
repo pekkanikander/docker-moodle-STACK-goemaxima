@@ -41,3 +41,4 @@ dc up -d --force-recreate
 ./init/scripts/mail-init.sh
 ./init/scripts/stack-init.sh
 ./init/scripts/auth-init.sh
+./init/scripts/appearance-init.sh

@@ -51,6 +51,10 @@ MOODLE_ADMIN_PASSWORD=Change-me!
 MOODLE_ADMIN_FORCE_PASSWORD_CHANGE=0
 MOODLE_NOREPLY_EMAIL=noreply@example.com
 
+# Marks every page as this being the local instance (green tint and badge).
+MOODLE_ENV_LABEL=LOCAL
+MOODLE_ENV_COLOUR=#2e7d32
+
 # All outgoing mail is captured by the bundled Mailpit;
 # browse it at http://localhost:8025.
 MOODLE_SMTPHOSTS=mailpit:1025
@@ -118,6 +122,8 @@ phase "Configuring STACK."
 ./init/scripts/stack-init.sh
 phase "Configuring authentication."
 ./init/scripts/auth-init.sh
+phase "Marking the environment."
+./init/scripts/appearance-init.sh
 
 port="${MOODLE_HTTP_PORT:-8000}"
 url="http://localhost:${port}"

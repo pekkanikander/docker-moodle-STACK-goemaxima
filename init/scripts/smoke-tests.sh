@@ -15,6 +15,15 @@ if ! curl -fsS "http://[::1]:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null; th
   exit 1
 fi
 
+if [ -n "${MOODLE_ENV_LABEL:-}" ]; then
+  echo "Checking the environment marking..."
+  if ! curl -fsS "http://localhost:${MOODLE_HTTP_PORT}/login/index.php" \
+      | grep -q "content:\"${MOODLE_ENV_LABEL}\""; then
+    echo "ERROR: the ${MOODLE_ENV_LABEL} badge is missing from the login page; rerun appearance-init.sh." >&2
+    exit 1
+  fi
+fi
+
 echo "Checking published ports bind loopback only..."
 for cid in $(dc ps -q); do
   if docker port "$cid" | grep -E '0\.0\.0\.0|\[::\]'; then

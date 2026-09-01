@@ -57,7 +57,9 @@ Or run the steps yourself:
 7) Configure authentication (passwordless login on a localhost site URL,
    password login otherwise):
    - `./init/scripts/auth-init.sh`
-8) Open `http://localhost:${MOODLE_HTTP_PORT}` and log in as your admin user
+8) Mark the environment (page tint and corner badge, optional):
+   - `./init/scripts/appearance-init.sh`
+9) Open `http://localhost:${MOODLE_HTTP_PORT}` and log in as your admin user
    (empty password on a localhost site URL).
 
 `.env.versions` is committed and generated from `versions.yml`; after editing
@@ -92,6 +94,11 @@ Common overrides:
 - `COMPOSE_PROFILES` (`mail-capture` runs the bundled Mailpit; empty on
   servers relaying to a real SMTP host)
 - `MAILPIT_HTTP_PORT` (host-local port for the Mailpit web UI, default `8025`)
+- `MOODLE_ENV_LABEL`, `MOODLE_ENV_COLOUR` (per-environment marking applied by
+  `appearance-init.sh`, safe to rerun: every page gets a tint of the colour
+  and a corner badge with the label, so it is obvious whether you are looking
+  at local, staging or production. An empty label leaves the site unmarked;
+  the colour is a hex value or a CSS colour name)
 Less common overrides:
 - `DOCKER_COMPOSE_ARGS` (extra arguments passed to `docker compose` by init scripts)
 - `MARIADB_UID`, `MARIADB_GID` (override mysql UID/GID inside the image for bind mounts)
