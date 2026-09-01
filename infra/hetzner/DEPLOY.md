@@ -210,9 +210,11 @@ An installed server is updated by checking out the new commit and running
 `infra/hetzner/scripts/server-update.sh`. Both the automated and the manual
 update path (below) use that same script; it performs a database backup,
 re-runs `server-bootstrap.sh` (as root: Caddyfile, backup units,
-`.env.versions`, image build), then `up -d`, `upgrade.php`, `stack-init.sh`,
-the smoke tests, and an external check of the public site URL. It fails fast and
-leaves state in place for manual investigation.
+`.env.versions`, image build), then `up -d`, `upgrade.php`, the idempotent
+`lang-init.sh`, `mail-init.sh` and `stack-init.sh` (the same convergence
+`tools/start.sh` runs locally), the smoke tests, and an external check of the
+public site URL. It fails fast and leaves state in place for manual
+investigation.
 
 Do NOT run `moodle-init.sh` on an installed site. It deletes `config.php` from
 both the container and `moodledata` before running the installer, so it destroys
