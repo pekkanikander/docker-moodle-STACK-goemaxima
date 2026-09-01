@@ -97,7 +97,11 @@ dc build
 phase "Starting services."
 if [ -f "$root/moodledata/config.php" ]; then
   dc up -d
-  phase "Moodle is already installed; skipping installation."
+  # A rebuilt image can carry newer plugin versions than the installed DB,
+  # which leaves the site behind an "upgrade required" wall. No-op otherwise.
+  phase "Moodle is already installed; applying any pending upgrades."
+  dc exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php \
+    --non-interactive
 else
   # A wiped persistent root leaves already-running containers with orphaned
   # bind mounts; recreate them so the mounts attach to the fresh directories.

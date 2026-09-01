@@ -59,14 +59,15 @@ aiprovider_claude_sha256: "01da5cd37cdc36a3e53d8e0f8abda0446ed0da85ea2e551bdd8a5
 
 # aitext_rubric (AI-graded free text with a criterion rubric; our fork of
 # qtype_aitext, notes/TASK-02) and its two required behaviour adapter
-# plugins (also our forks: upstream ties them to qtype_aitext releases).
+# plugins (also our forks: upstream's is_compatible_question() ties them to
+# qtype_aitext; the forks drop that check, PRs are open upstream).
 # The qtype is pinned to its release tag; the behaviour forks carry no tags
 # yet, so they are pinned by commit SHA. The local_aitextflags companion
 # (flag-for-teacher) is likewise pinned by commit SHA until first tagged.
-qtype_aitext_rubric_tag: "v0.1.0"
-qtype_aitext_rubric_version: "0.1.0"
-qtype_aitext_rubric_url: "https://github.com/pekkanikander/moodle-qtype_aitext_rubric/archive/refs/tags/v0.1.0.zip"
-qtype_aitext_rubric_sha256: "9057e79efa3b4fd52feae560d5e7d43485fa6ce37a0eb139dd1c6695d8062c57"
+qtype_aitext_rubric_tag: "v0.1.1"
+qtype_aitext_rubric_version: "0.1.1"
+qtype_aitext_rubric_url: "https://github.com/pekkanikander/moodle-qtype_aitext_rubric/archive/refs/tags/v0.1.1.zip"
+qtype_aitext_rubric_sha256: "c64c1636bc2da139a55dc4f305c56cf0078ce22563ace8ca7a3f9c540993a5d4"
 aitext_behaviour_plugin_refs:
   qbehaviour_deferred_for_aitext: "1a29c4a06334cdfea3d8e0928f7b2aac58b4fb49"
   qbehaviour_immediate_for_aitext: "8e8c6352bb3932b25bea874dcfd92d77d6ec4d7a"
