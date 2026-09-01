@@ -34,6 +34,7 @@ $dc exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php --non-int
 ./init/scripts/lang-init.sh
 ./init/scripts/mail-init.sh
 ./init/scripts/stack-init.sh
+./init/scripts/auth-init.sh
 
 echo "Running smoke tests..."
 ./init/scripts/smoke-tests.sh

@@ -45,9 +45,10 @@ MOODLE_SITE_FULLNAME="Moodle Site"
 MOODLE_SITE_SHORTNAME=Moodle
 MOODLE_ADMIN_USER=admin
 MOODLE_ADMIN_EMAIL=admin@example.com
-# Temporary password; Moodle forces a change at first login.
+# Install-time password only: auth-init.sh switches this loopback-only
+# instance to passwordless login (username + empty password field).
 MOODLE_ADMIN_PASSWORD=Change-me!
-MOODLE_ADMIN_FORCE_PASSWORD_CHANGE=1
+MOODLE_ADMIN_FORCE_PASSWORD_CHANGE=0
 MOODLE_NOREPLY_EMAIL=noreply@example.com
 
 # All outgoing mail is captured by the bundled Mailpit;
@@ -115,6 +116,8 @@ phase "Configuring outgoing mail."
 ./init/scripts/mail-init.sh
 phase "Configuring STACK."
 ./init/scripts/stack-init.sh
+phase "Configuring authentication."
+./init/scripts/auth-init.sh
 
 port="${MOODLE_HTTP_PORT:-8000}"
 url="http://localhost:${port}"

@@ -111,6 +111,73 @@ if ($errors) {
 }
 '
 
+echo "Checking authentication posture..."
+dc exec -T moodle php -r '
+define("CLI_SCRIPT", true);
+require "/var/www/html/config.php";
+$errors = [];
+if (empty($CFG->authpreventaccountcreation)) {
+  $errors[] = "authpreventaccountcreation is off; an IdP login could create an account";
+}
+if (!empty($CFG->registerauth)) {
+  $errors[] = "registerauth is set; self-registration must stay off";
+}
+if (get_config("core", "guestloginbutton")) {
+  $errors[] = "guest login button is not hidden";
+}
+$enabled = get_enabled_auth_plugins();
+if (!in_array("oauth2", $enabled)) {
+  $errors[] = "auth_oauth2 is not enabled; run auth-init.sh";
+}
+$loopback = (bool) preg_match("~^http://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$~", $CFG->wwwroot);
+if ($loopback) {
+  if (!in_array("none", $enabled)) {
+    $errors[] = "auth_none is not enabled on loopback wwwroot; run auth-init.sh";
+  }
+} else {
+  if (in_array("none", $enabled)) {
+    $errors[] = "auth_none (passwordless) is enabled on non-loopback wwwroot " . $CFG->wwwroot;
+  }
+  foreach ($DB->get_records_select("user", "deleted = 0 AND suspended = 0") as $user) {
+    if (validate_internal_user_password($user, "")) {
+      $errors[] = "account " . $user->username . " accepts an empty password on non-loopback wwwroot";
+    }
+  }
+}
+if ($errors) {
+  fwrite(STDERR, implode("\n", $errors) . "\n");
+  exit(1);
+}
+'
+
+# Functional check of passwordless local login (loopback wwwroot only): the
+# blank-password mechanism must keep working across Moodle bumps.
+case "${MOODLE_SITE_URL:-}" in
+  "http://localhost"|"http://localhost:"*|"http://127.0.0.1"|"http://127.0.0.1:"*|"http://[::1]"|"http://[::1]:"*)
+    echo "Checking passwordless login..."
+    login_url="http://localhost:${MOODLE_HTTP_PORT}/login/index.php"
+    jar="$(mktemp)"
+    token="$(curl -fsS -c "$jar" "$login_url" \
+      | sed -n 's/.*name="logintoken" value="\([^"]*\)".*/\1/p' | head -n 1)"
+    if [ -z "$token" ]; then
+      echo "ERROR: could not extract a logintoken from ${login_url}" >&2
+      exit 1
+    fi
+    final="$(curl -fsS -b "$jar" -c "$jar" -L -o /dev/null -w '%{url_effective}' \
+      --data-urlencode "username=${MOODLE_ADMIN_USER:-admin}" \
+      --data-urlencode "password=" \
+      --data-urlencode "logintoken=${token}" \
+      "$login_url")"
+    rm -f "$jar"
+    case "$final" in
+      *"/login/"*)
+        echo "ERROR: passwordless login as ${MOODLE_ADMIN_USER:-admin} failed (landed on ${final})." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+esac
+
 # Only when Moodle sends to the bundled Mailpit (local/CI); production
 # points smtphosts at a real relay, which this check cannot inspect.
 if [ "${MOODLE_SMTPHOSTS:-}" = "mailpit:1025" ]; then
