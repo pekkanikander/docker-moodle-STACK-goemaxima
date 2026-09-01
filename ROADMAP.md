@@ -149,11 +149,15 @@ content-creation phase, so this fits in the next few weeks):
       `{config_plugins}`. The tag is excluded from the change-detection hash,
       so a new commit alone creates no question versions (tested in
       `qbank/tests/` and end to end in CI).
-- [ ] Backup security session: a compromised server can poison the dumps the
-      MBP pulls, and a restored dump faithfully restores attacker state.
-      Topics: append-only MBP copies, baselining/diffing security-relevant
-      tables between dumps, post-restore audit checklist. Interim stance in
-      `infra/BACKUP.md` (prefer an older weekly, audit users and tokens).
+- [x] Backup security: decided 2026-09-01, no session needed. The GitHub
+      repos are the source of truth and Moodle state (attempt history
+      included) is expendable, so the response to suspected compromise is
+      rebuild-from-scratch plus a weekly dump predating the suspicion, not
+      forensics; stance recorded in `infra/BACKUP.md`. Kept: MBP weeklies
+      retained ~1 year (53), a post-restore checklist in `infra/BACKUP.md`,
+      and the API key confined to a dedicated Claude Platform workspace
+      capped at 10 USD/month. Rejected as disproportionate: append-only
+      archives beyond that, baselining/diffing dumps.
 - [ ] Server hardening leftovers: fail2ban (or equivalent), minimal monitoring
       (disk-usage threshold, external uptime check), HSTS once stable.
 - [ ] Full from-MBP disaster restore drill, when worth destroying the server.

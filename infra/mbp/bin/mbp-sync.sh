@@ -11,7 +11,7 @@ HOST=${BACKUP_SSH_HOST:-moodle-hetzner}
 DEST=${BACKUP_DEST:-$HOME/Sites/oivus.pnr.iki.fi}
 MIN_AGE_H=${MIN_AGE_H:-20}
 DAILY_KEEP=${DAILY_KEEP:-7}
-WEEKLY_KEEP=${WEEKLY_KEEP:-4}
+WEEKLY_KEEP=${WEEKLY_KEEP:-53}
 
 stamp="$DEST/.last-sync"
 mkdir -p "$DEST/db/daily" "$DEST/db/weekly" "$DEST/moodledata"

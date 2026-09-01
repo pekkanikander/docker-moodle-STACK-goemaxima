@@ -10,7 +10,8 @@ Three generations protect against different failures:
    integrity checks (gzip, size, completion marker).
 2. **MBP copy** (`~/Sites/oivus.pnr.iki.fi/`) — the actual disaster
    protection: server compromise, volume loss, Hetzner account problems.
-   Daily dumps (kept 7), weeklies (kept 4), plus a moodledata mirror.
+   Daily dumps (kept 7), weeklies (kept 53, about a year), plus a
+   moodledata mirror.
 3. **Time Machine** snapshots of the MBP copy — older history.
 
 ## MBP setup
@@ -63,14 +64,39 @@ From `~/Sites/oivus.pnr.iki.fi` (its README carries the same runbook):
    server-side restore.
 5. Verify: site loads over https, admin login works, STACK health check green.
 
-## Caveat
+## Compromise stance (decided 2026-09-01)
 
-A restored backup taken after a compromise restores the attacker's changes
-too (accounts, tokens, content). Hardening/auditing of backups is a separate,
-planned topic; until then, after any suspected compromise prefer an older
-weekly dump and review users and web-service tokens after restoring.
+The GitHub repos are the source of truth; the Moodle state, attempt history
+included, is expendable. A restored dump taken after a compromise restores
+the attacker's changes too (accounts, tokens, content), so the response to a
+suspected compromise is rebuild-from-scratch — the full-disaster runbook
+above, with a weekly dump old enough to predate the suspicion, or with no
+dump at all — never forensic cleaning of a running server. Bespoke detection
+machinery (baselining or diffing security-relevant tables across dumps) was
+considered and rejected as disproportionate to the assets.
 
-The dumps also contain the Anthropic API key (stored in the Moodle database
-by the AI provider config). If a dump may have leaked, rotate the key in the
-Anthropic Console; after a compromise-related restore, rotate it as a matter
-of course.
+What a compromise actually threatens is not availability but the student's
+personal data (name, email, attempt history — present in every dump, on the
+server and here) and the Anthropic API key (in the Moodle database, hence in
+every dump). The key lives in a dedicated Claude Platform workspace with a
+hard cost cap (10 USD/month), so its blast radius is bounded and rotation
+takes minutes.
+
+## Post-restore checklist
+
+After any restore; mandatory when compromise is suspected. In the admin UI:
+
+1. Site administrators (*Users → Permissions → Site administrators*): only
+   the expected account.
+2. User list (*Users → Browse list of users*): no unexpected accounts, and
+   every account authenticates via "Manual accounts".
+3. Web-service tokens (*Server → Web services → Manage tokens*): none.
+4. Authentication plugins (*Plugins → Authentication*): only "Manual
+   accounts" enabled, and the site posture checks in
+   `infra/hetzner/DEPLOY.md` §7 still pass.
+5. Outgoing-mail settings unchanged (*Server → Email*), the
+   `divertallemailsto` diversion included.
+
+When compromise is suspected, additionally rotate: the Anthropic API key
+(Claude Console workspace, then re-enter in the admin UI), the Moodle admin
+password, and the IKI SMTP service password.
