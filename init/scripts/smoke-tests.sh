@@ -10,6 +10,18 @@ if ! curl -fsS "http://localhost:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null
   echo "ERROR: Moodle HTTP check failed at http://localhost:${MOODLE_HTTP_PORT}/login/index.php" >&2
   exit 1
 fi
+if ! curl -fsS "http://[::1]:${MOODLE_HTTP_PORT}/login/index.php" >/dev/null; then
+  echo "ERROR: Moodle HTTP check failed at http://[::1]:${MOODLE_HTTP_PORT}/login/index.php" >&2
+  exit 1
+fi
+
+echo "Checking published ports bind loopback only..."
+for cid in $(dc ps -q); do
+  if docker port "$cid" | grep -E '0\.0\.0\.0|\[::\]'; then
+    echo "ERROR: container $(docker inspect -f '{{.Name}}' "$cid") publishes a wildcard listener." >&2
+    exit 1
+  fi
+done
 
 echo "Checking STACK, aitext and AI provider plugin registration..."
 dc exec -T moodle php -r '
