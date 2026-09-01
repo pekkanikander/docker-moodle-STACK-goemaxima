@@ -27,6 +27,12 @@ dc="docker compose --env-file .env.versions --env-file .env"
 $dc up -d
 $dc exec -T -u www-data moodle php /var/www/html/admin/cli/upgrade.php --non-interactive
 
+# STACK configuration and the dataroot directories STACK writes plots into.
+# Idempotent and driven from .env, so it converges a server whose install
+# predates a setting -- which is how the stack/ directories came to be missing
+# here, silently dropping every CAS-generated plot.
+./init/scripts/stack-init.sh
+
 echo "Running smoke tests..."
 ./init/scripts/smoke-tests.sh
 
