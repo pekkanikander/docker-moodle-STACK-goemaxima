@@ -32,7 +32,8 @@ currently being tested with the student.
 
 Extend beyond STACK's numeric/CAS grading to formative essay drilling, using
 the Moodle core AI subsystem as the provider-agnostic abstraction. Task briefs
-in `notes/`; feature work done locally, operationalisation pending.
+in `notes/`. Done 2026-09-01: both tasks are implemented, pinned, deployed to
+staging and verified there.
 
 - [x] TASK-01 (`notes/TASK-01-anthropic-aiprovider.md`): done 2026-08-26.
       Survey (`notes/aiprovider-survey.md`) found the contributed
@@ -40,9 +41,10 @@ in `notes/`; feature work done locally, operationalisation pending.
       STACK plugins, deployed to staging. It supports Moodle 5.0–5.2, so it
       puts no pressure on the 5.2 migration. API key added and provider
       enabled on staging via the admin UI 2026-08-26; fully done.
-- [ ] TASK-02 (`notes/TASK-02-aitext-drilling-extension.md`): essay-drilling
-      extension on qtype_aitext — criterion-referenced structured feedback,
-      scaffold-then-fade levels, honest grading progression, flag-for-teacher.
+- [x] TASK-02 (`notes/TASK-02-aitext-drilling-extension.md`): done 2026-09-01.
+      Essay-drilling extension on qtype_aitext — criterion-referenced
+      structured feedback, scaffold-then-fade levels, honest grading
+      progression, flag-for-teacher.
       Milestone 1 done 2026-08-26: vanilla qtype_aitext 2.1.0 (+ its two
       behaviour adapter plugins) baked into the image, pinned by commit SHA
       (2.1.0 untagged upstream); architecture note in
@@ -73,8 +75,13 @@ in `notes/`; feature work done locally, operationalisation pending.
       capture). The student flag flow has Behat coverage in the companion's
       `tests/behat/flag.feature`; the fork's own student rendering (rubric
       checklist, scaffold levels) has none, which is accepted for now.
-      Remaining: re-verifying the notification email on staging, now that real
-      mail delivery is live (see M6).
+      Verified end to end on staging 2026-09-01, with the fixtures imported
+      there: a student attempt was really AI-graded (3.0/5 on a deliberately
+      partial answer), the flag produced its notification row, and SMTP
+      delivery to `smtp.iki.fi` succeeded. The notification goes to the admin
+      account, whose address is still the `admin@example.com` placeholder and
+      only reaches a mailbox because `divertallemailsto` catches it — fix that
+      together with M7's removal of the divert.
 
 ## Question-bank capability
 
@@ -154,7 +161,9 @@ content-creation phase, so this fits in the next few weeks):
 ## M7 — Possible extensions (not planned yet)
 
 - Access for other homeschool families: remove the staging
-  `divertallemailsto` diversion, GDPR/privacy notice, account provisioning
+  `divertallemailsto` diversion — and, with it, give the admin account a real
+  address, since it is still `admin@example.com` and only the diversion makes
+  its notifications arrive — GDPR/privacy notice, account provisioning
   policy.
 - Windows support for the no-terminal local setup (`tools/start.sh` stays
   POSIX; a Windows launcher is needed).
