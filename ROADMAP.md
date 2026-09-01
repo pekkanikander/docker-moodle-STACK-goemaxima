@@ -55,19 +55,26 @@ in `notes/`; feature work done locally, operationalisation pending.
       2026-08-28 (PHPUnit both repos, moodle-cs clean, flags-table backup
       decision recorded in the companion README). The fork has since been
       renamed into a separate component, `qtype_aitext_rubric`
-      (`pekkanikander/moodle-qtype_aitext_rubric`), released as 0.1.0; it
-      requires the two behaviour forks
-      `pekkanikander/moodle-qbehaviour_{immediate,deferred}_for_aitext`.
-      Deferred by decision (recorded in the task note): scaffold level 0,
-      `double_run`/`fuzz`, dynamic scaffold level. Operationalised
-      2026-08-28: `versions.yml` pins the 0.1.0 release, the behaviour
-      forks and the companion (by commit SHA); all four are baked into the
-      image and smoke-tested, and the dev overlay is no longer needed to
-      run the extension. Bell-icon notification re-tested locally
-      2026-08-28: the flag-for-teacher notification and its email both work
-      (email verified via the Mailpit capture). Remaining: Behat for the
-      student flow, and re-verifying the notification email on staging once
-      real mail delivery is live (see M6).
+      (`pekkanikander/moodle-qtype_aitext_rubric`); it requires the two
+      behaviour forks
+      `pekkanikander/moodle-qbehaviour_{immediate,deferred}_for_aitext`,
+      which drop upstream's `is_compatible_question()` pin to `qtype_aitext`
+      (PRs open upstream). Deferred by decision (recorded in the task note):
+      scaffold level 0, `double_run`/`fuzz`, dynamic scaffold level.
+      Operationalised 2026-08-28: `versions.yml` pins the qtype release, the
+      behaviour forks and the companion (the latter three by commit SHA, none
+      tagged yet); all four are baked into the image and smoke-tested, and the
+      dev overlay is no longer needed to run the extension. Released 0.1.1 on
+      2026-09-01, rebased onto upstream main — which loosens the behaviour
+      dependencies to `ANY_VERSION`, so the forks no longer have to track a
+      qtype release number — and pinned here the same day. Bell-icon
+      notification re-tested locally 2026-08-28: the flag-for-teacher
+      notification and its email both work (email verified via the Mailpit
+      capture). The student flag flow has Behat coverage in the companion's
+      `tests/behat/flag.feature`; the fork's own student rendering (rubric
+      checklist, scaffold levels) has none, which is accepted for now.
+      Remaining: re-verifying the notification email on staging, now that real
+      mail delivery is live (see M6).
 
 ## Question-bank capability
 
