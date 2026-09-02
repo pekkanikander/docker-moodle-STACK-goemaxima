@@ -70,9 +70,14 @@ jobs:
           if [ ! -f .env.ci ]; then
             # The absolute default persistent root would be created root-owned by
             # Docker; clean-rebuild.sh only wipes and opens up relative roots.
+            # Dummy Google credentials: issuer creation never validates them
+            # against Google, so this exercises auth-init.sh's create path and
+            # the smoke-test issuer assertion without any real secret.
             printf '%s\n' \
               'MOODLE_PERSISTENT_ROOT=.ci-persistent' \
               'MOODLE_ADMIN_PASSWORD=testing-only-no-production' \
+              'MOODLE_GOOGLE_OAUTH_CLIENT_ID=ci-dummy.apps.googleusercontent.com' \
+              'MOODLE_GOOGLE_OAUTH_CLIENT_SECRET=ci-dummy-secret' \
               > .env.ci
           fi
           cat .env.versions .env.example .env.ci > .env
