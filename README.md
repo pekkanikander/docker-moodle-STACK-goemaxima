@@ -1,7 +1,28 @@
 # docker-moodle-STACK-goemaxima
 
-Minimal Docker Compose for Moodle + MariaDB + STACK (goemaxima),
-with pinned versions and a custom Moodle image.
+Docker Compose setup for Moodle + MariaDB + STACK (goemaxima), with pinned,
+checksummed versions and a custom Moodle image. Beyond the base stack it
+provides:
+
+- **Questions as code** — question banks authored as YAML in git, compiled to
+  Moodle XML and imported by CLI, with provenance stamping and per-question
+  tests (see [Question banks](#question-banks) and `qbank/README.md`).
+- **AI-graded essay drilling** — the `qtype_aitext_rubric` question type
+  (criterion-referenced feedback with fading scaffolds) and an Anthropic
+  Claude provider for the Moodle core AI subsystem.
+- **Hosting** — repeatable Hetzner VM provisioning with Caddy TLS, a CI-gated
+  deploy workflow, backups and monitoring (`infra/`).
+
+Built to run exam drilling for one homeschooled learner (Finnish peruskoulu
+physics and chemistry; `ROADMAP.md` has the whole story), but generic enough
+to reuse for any small Moodle + STACK site.
+
+Status: **pre-alpha**. The full chain works end to end — locally, in CI and
+on a staging server — but expect breaking changes and no upgrade path between
+versions. Public domain ([the Unlicense](LICENSE)).
+
+The no-terminal quickstart below is macOS-only; the command-line quickstart
+works anywhere Docker Compose runs. There is no Windows launcher yet.
 
 ## Quickstart (no terminal needed)
 
@@ -205,6 +226,20 @@ as are the companion behaviour plugins.
   production one. It lives in the local database, so it disappears with the
   persistent root on a full from-scratch rebuild and must then be re-entered.
 - Survey and selection rationale: `notes/aiprovider-survey.md`.
+
+## AI-graded essay questions (aitext)
+
+- The `qtype_aitext_rubric` question type
+  ([pekkanikander/moodle-qtype_aitext_rubric](https://github.com/pekkanikander/moodle-qtype_aitext_rubric),
+  our fork of `qtype_aitext`) is baked into the image, together with its two
+  behaviour adapters (`qbehaviour_{deferred,immediate}_for_aitext`) and the
+  `local_aitextflags` flag-for-teacher companion. All four are pinned in
+  `versions.yml` like the STACK plugins.
+- Question sources with `type: aitext` compile and import through the qbank
+  tooling like any other; grading runs through the enabled AI provider.
+  `./tools/qbank.sh aitest` runs the golden-test harness against real
+  grading. See `qbank/README.md` ("AI-graded explanation questions") and the
+  fork's `docs/rubric-design.md` for the rubric format.
 
 ## Question banks
 

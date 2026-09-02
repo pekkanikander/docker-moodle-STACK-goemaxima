@@ -4,6 +4,20 @@ Concrete steps for provisioning, DNS, TLS and first deploy. Run the macOS
 steps from the repo root. Cloud-init automates everything up to (but
 excluding) the `.env` secrets and the init scripts.
 
+## 0. Deploying your own host instead
+
+This runbook provisions `oivus.pnr.iki.fi`. To deploy a different hostname,
+edit it in three places (parametrising these is on the roadmap, M7):
+
+- `infra/hetzner/scripts/server-bootstrap.sh` (the `MOODLE_SITE_URL` seed)
+- `infra/hetzner/caddy/Caddyfile` (the vhost)
+- `.github/workflows/deploy-staging.yml` (`DEPLOY_HOST`)
+
+`ssh-keygen.sh` and `hcloud-create.sh` already take the hostname as an
+environment variable. §3 (easyDNS), the `smtp.iki.fi` relay in §6 and the
+healthchecks.io account in §11 are this site's choices; substitute your own
+DNS provider, SMTP relay and ping service.
+
 ## 1. One-time macOS preparation
 
 ```sh

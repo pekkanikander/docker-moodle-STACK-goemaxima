@@ -205,7 +205,12 @@ content-creation phase, so this fits in the next few weeks):
 - Real production at `oivus.fi` (or similar; domain not yet registered) —
   `oivus.pnr.iki.fi` is the staging environment. Before production go-live:
   set `display_errors=0` in the Moodle image (deliberately 1 for now, to
-  surface errors while staging).
+  surface errors while staging), and parametrise the deploy hostname —
+  currently hardcoded in `infra/hetzner/scripts/server-bootstrap.sh`,
+  `infra/hetzner/caddy/Caddyfile` and
+  `.github/workflows/deploy-staging.yml` (see `DEPLOY.md` §0) — so staging
+  and production deploy from the same scripts, which also unhardcodes it
+  for forks.
 - Moodle 5.2 line migration (no pressure from the AI side: the adopted
   provider supports 5.0–5.2).
 - Renovate (or similar) update PRs, grouped and CI-gated.
