@@ -299,7 +299,7 @@ tab keeps showing the version it was loaded with, so reload after an import.
 
 Use `tools/act-ci.sh` to run the GitHub Actions workflow locally; tested only with macOS 15.7.
 This repo assumes `ghcr.io/catthehacker/ubuntu:act-latest` is available on your hardware.
-CI runs on PRs, tags, releases, and manual dispatch; `act-ci.sh` uses amd64 emulation.
+CI runs on pushes to `main`, PRs, tags, releases, and manual dispatch; `act-ci.sh` uses amd64 emulation.
 `act-ci.sh` uses `--bind` so bind-mounted persistent paths work.
 
 The CI run creates `.env` by concatenating `.env.versions`, `.env.example` and `.env.ci`.

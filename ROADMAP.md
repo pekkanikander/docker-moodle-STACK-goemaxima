@@ -174,6 +174,18 @@ content-creation phase, so this fits in the next few weeks):
       ping emails. Daily granularity is the accepted detection bound;
       minutes-level external uptime monitoring deferred to M7. Runbook in
       `infra/hetzner/DEPLOY.md` §11.
+- [x] TASK-07 (`notes/TASK-07-sso-and-localhost-auth.md`): done 2026-09-02.
+      Google SSO on staging via core `auth_oauth2`: `auth-init.sh` converges
+      the issuer from the `MOODLE_GOOGLE_OAUTH_CLIENT_*` variables in `.env`
+      (runbook in `infra/hetzner/DEPLOY.md` §8; the Google Cloud side and
+      account linking stay manual), and SSO-only accounts carry no password.
+      Localhost is passwordless: on a loopback-only wwwroot `auth-init.sh`
+      switches local accounts to `auth_none` and blanks their passwords;
+      off-loopback it asserts the opposite posture, and `smoke-tests.sh`
+      fails the deploy if any active account accepts an empty password.
+      `[::1]` published ports added for `moodle` and `mailpit` so IPv6
+      loopback works too. Apple SSO surveyed (`notes/sso-apple-survey.md`)
+      and deferred: Moodle 5.1 core cannot complete an Apple login.
 - [ ] Full from-MBP disaster restore drill, when worth destroying the server.
 
 ## M7 — Possible extensions (not planned yet)
@@ -216,4 +228,5 @@ content-creation phase, so this fits in the next few weeks):
   repos) — the TASK-02 question type and its companion plugin.
 - `infra/hetzner/DEPLOY.md` — hosting runbook (provisioning, DNS, TLS, deploy).
 - `infra/BACKUP.md` — backup/restore architecture and runbooks.
-- `notes/` — task briefs for upcoming work (TASK-01 to TASK-06).
+- `notes/` — task briefs (TASK-01 to TASK-07, all done) and the survey and
+  architecture notes behind them.
