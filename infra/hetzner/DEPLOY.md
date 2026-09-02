@@ -97,6 +97,9 @@ On the VM (`ssh moodle-hetzner`), edit `/opt/moodle-stack/.env` (nano or vi):
 - `MOODLE_ENV_LABEL` and `MOODLE_ENV_COLOUR` (page tint and corner badge
   marking the environment; `STAGING` and `#b26a00` on this server, empty
   label on production)
+- optionally `MOODLE_GOOGLE_OAUTH_CLIENT_ID` and
+  `MOODLE_GOOGLE_OAUTH_CLIENT_SECRET` for Google sign-in (§8; can be added
+  later, then applied with `./init/scripts/auth-init.sh`)
 
 Then:
 
@@ -199,9 +202,9 @@ Accounts are created manually in the admin UI (*Site administration → Users*).
 
 `auth-init.sh` enables the OAuth 2 auth plugin and sets
 `authpreventaccountcreation`, so a Google login succeeds only when its email
-matches a pre-created account; anything else is refused. The issuer itself is
-configured in the admin UI — the client ID/secret live in the Moodle database
-only, never in the repo or `.env` (same policy as the Anthropic API key).
+matches a pre-created account; anything else is refused. The OAuth client
+ID/secret go into `/opt/moodle-stack/.env` (never in the repo; the Moodle
+admin UI is the manual fallback).
 
 1. In the [Google Cloud console](https://console.cloud.google.com/), create
    (or reuse) a project, configure the OAuth consent screen, and create an
@@ -209,29 +212,38 @@ only, never in the repo or `.env` (same policy as the Anthropic API key).
    `https://oivus.pnr.iki.fi/admin/oauth2callback.php`. (Re-register at the
    `oivus.fi` move.)
 
-2. In Moodle (*Site administration → Server → OAuth 2 services*,
-   `/admin/tool/oauth2/issuers.php`), *Create new service: Google*. Paste the
-   client ID and secret, keep *Show on login page* as "Login page", and
-   **untick "Require email verification"**: with `divertallemailsto` set,
-   verification mail never reaches the student, and it is redundant here —
-   Google only asserts addresses it has verified, and unknown addresses are
-   refused by `authpreventaccountcreation`.
+2. In `/opt/moodle-stack/.env`:
 
-3. Ensure the student's Moodle account email is exactly their Google address
-   (*Site administration → Users*). The first Google login then auto-links to
-   that account; the account keeps its role and enrolments.
+   ```
+   MOODLE_GOOGLE_OAUTH_CLIENT_ID=<client id>
+   MOODLE_GOOGLE_OAUTH_CLIENT_SECRET=<client secret>
+   ```
+
+   Then apply: `./init/scripts/auth-init.sh`. It creates or updates the
+   Google issuer (*Site administration → Server → OAuth 2 services*) with
+   email verification off: with `divertallemailsto` set, a link-confirmation
+   mail would never reach the student, and it is redundant here — Google only
+   asserts addresses it has verified, and unknown addresses are refused by
+   `authpreventaccountcreation`. `smoke-tests.sh` asserts the issuer matches
+   `.env` whenever the client ID is set.
+
+3. Create the student's account (*Site administration → Users → Add a new
+   user*) with *Choose an authentication method* set to **OAuth 2** and the
+   email exactly their Google address. No password is needed — the form does
+   not require one for OAuth 2 accounts — and password login is refused for
+   the account outright; it can sign in only via Google. The first Google
+   login auto-links by email; the account keeps its role and enrolments.
+   (An existing password account with the matching email auto-links too, but
+   keeps its password; switch its authentication method to *OAuth 2* on the
+   user's edit page to retire the password.)
 
 4. Test: log out; the login page shows a Google button; sign in as the
-   student.
+   student. Also confirm a password login attempt for that account fails.
 
-5. Optional, after a successful Google login: set the account's
-   authentication method to *OAuth 2* on the user's edit page to retire the
-   site-local password entirely (password login stops working for that
-   account).
-
-A local instance can mirror this with redirect URI
+A local instance mirrors this by setting the same two variables in its
+`.env` from an OAuth client with redirect URI
 `http://localhost:8000/admin/oauth2callback.php` (Google accepts plain-http
-localhost); rarely worth it, as localhost login is passwordless anyway.
+localhost) and rerunning `./init/scripts/auth-init.sh`.
 
 ## 9. Enable the AI provider (Anthropic Claude)
 

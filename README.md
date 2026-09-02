@@ -55,7 +55,8 @@ Or run the steps yourself:
 6) Configure STACK (optional but recommended):
    - `./init/scripts/stack-init.sh`
 7) Configure authentication (passwordless login on a localhost site URL,
-   password login otherwise):
+   password login otherwise; converges the Google SSO issuer when the
+   `MOODLE_GOOGLE_OAUTH_CLIENT_*` variables are set in `.env`):
    - `./init/scripts/auth-init.sh`
 8) Mark the environment (page tint and corner badge, optional):
    - `./init/scripts/appearance-init.sh`
@@ -80,6 +81,9 @@ Common overrides:
 - `MOODLE_ADMIN_FORCE_PASSWORD_CHANGE` (`1` forces an admin password change at
   first login; moot on a localhost instance, where `auth-init.sh` switches
   accounts to passwordless login)
+- `MOODLE_GOOGLE_OAUTH_CLIENT_ID` and `MOODLE_GOOGLE_OAUTH_CLIENT_SECRET`
+  (optional Google SSO; `auth-init.sh` creates/updates the Google issuer
+  from them — see `.env.example` and `infra/hetzner/DEPLOY.md` §8)
 - `MOODLE_LANGPACKS` (language packs to install, comma- or space-separated
   Moodle language codes, e.g. `fi`; English needs no pack)
 - `MOODLE_LANG` (fallback site language, default `en`; must be `en` or one of

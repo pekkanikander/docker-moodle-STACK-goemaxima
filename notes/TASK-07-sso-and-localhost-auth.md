@@ -71,6 +71,13 @@ worth the dependency here. Google-only; revisit triggers in the survey.
 entered in the admin UI only; the manual steps are documented in DEPLOY.md
 (same treatment as the SMTP credentials).
 
+*Revised 2026-09-02:* relaxed for the OAuth client credentials specifically —
+they may live in `.env` (gitignored, per-machine), where
+`MOODLE_GOOGLE_OAUTH_CLIENT_ID`/`MOODLE_GOOGLE_OAUTH_CLIENT_SECRET` let
+`auth-init.sh` converge the Google issuer instead of hand-entering it. "No
+secrets in the repo" stands; the admin UI remains the fallback. The Anthropic
+API key and SMTP credentials stay admin-UI-only.
+
 **R2. SSO must not open account creation.** `authpreventaccountcreation`
 is set; an IdP login succeeds only when it maps (by email) to a pre-created
 account. Self-registration stays off; the guest button stays hidden. The
@@ -122,7 +129,18 @@ Implemented in `init/scripts/auth-init.sh` (run by `tools/start.sh`,
 `tools/clean-rebuild.sh` and `server-update.sh`), with the posture assertions
 in `smoke-tests.sh` and the `[::1]` port bindings in `docker-compose.yml`
 (verified to publish loopback-only on macOS). Google issuer setup is
-DEPLOY.md §8; the admin-UI steps there remain manual by design (R1).
+DEPLOY.md §8: `auth-init.sh` converges the issuer from the
+`MOODLE_GOOGLE_OAUTH_CLIENT_*` variables when set (R1 as revised above);
+the Google Cloud side and account linking remain manual.
+
+Password-free SSO-only accounts need no extra machinery: an account created
+with authentication method "OAuth 2" requires no password (the admin form
+only demands one for internal auth plugins) and refuses password login
+outright — `auth_oauth2::user_login()` returns false outside an OAuth
+callback, and its `prevent_local_passwords()` keeps the hash unset
+(`AUTH_PASSWORD_NOT_CACHED`, which `validate_internal_user_password()`
+rejects, so the empty-password posture checks are unaffected). Documented as
+DEPLOY.md §8 step 3.
 
 One deviation from the sketch: `auth_none` alone is *not* passwordless for
 existing accounts — core validates the stored hash and is only
