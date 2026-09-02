@@ -1,5 +1,9 @@
 # docker-moodle-STACK-goemaxima
 
+[![CI](https://github.com/pekkanikander/docker-moodle-STACK-goemaxima/actions/workflows/ci.yml/badge.svg)](https://github.com/pekkanikander/docker-moodle-STACK-goemaxima/actions/workflows/ci.yml)
+[![Deploy](https://github.com/pekkanikander/docker-moodle-STACK-goemaxima/actions/workflows/deploy-staging.yml/badge.svg)](https://github.com/pekkanikander/docker-moodle-STACK-goemaxima/actions/workflows/deploy-staging.yml)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
+
 Docker Compose setup for Moodle + MariaDB + STACK (goemaxima), with pinned,
 checksummed versions and a custom Moodle image. Beyond the base stack it
 provides:
@@ -23,6 +27,10 @@ versions. Public domain ([the Unlicense](LICENSE)).
 
 The no-terminal quickstart below is macOS-only; the command-line quickstart
 works anywhere Docker Compose runs. There is no Windows launcher yet.
+
+No support: this is a personal project, maintained as the learner's needs
+dictate. Issues and PRs are read but may go unanswered. That said, if you
+find this useful, a short note would be appreciated.
 
 ## Quickstart (no terminal needed)
 
