@@ -121,10 +121,27 @@ if ($errors) {
 '
 
 echo "Checking authentication posture..."
-dc exec -T moodle php -r '
+dc exec -T -e GOOGLE_CLIENT_ID="${MOODLE_GOOGLE_OAUTH_CLIENT_ID:-}" moodle php -r '
 define("CLI_SCRIPT", true);
 require "/var/www/html/config.php";
 $errors = [];
+$clientid = (string) getenv("GOOGLE_CLIENT_ID");
+if ($clientid !== "") {
+  $google = \core\oauth2\issuer::get_record(["servicetype" => "google"]);
+  if (!$google) {
+    $errors[] = "no Google OAuth 2 issuer despite MOODLE_GOOGLE_OAUTH_CLIENT_ID; run auth-init.sh";
+  } else {
+    if (!$google->get("enabled")) {
+      $errors[] = "the Google OAuth 2 issuer is disabled";
+    }
+    if ($google->get("clientid") !== $clientid) {
+      $errors[] = "Google issuer clientid differs from MOODLE_GOOGLE_OAUTH_CLIENT_ID; run auth-init.sh";
+    }
+    if ($google->get("requireconfirmation")) {
+      $errors[] = "the Google issuer requires email verification; run auth-init.sh";
+    }
+  }
+}
 if (empty($CFG->authpreventaccountcreation)) {
   $errors[] = "authpreventaccountcreation is off; an IdP login could create an account";
 }

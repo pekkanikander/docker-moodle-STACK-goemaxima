@@ -2,8 +2,9 @@
 # Idempotent authentication configuration; like lang-init.sh/mail-init.sh,
 # safe to rerun at any time. Everywhere: OAuth 2 login (Google SSO) is
 # enabled and logins never create accounts, they only map to pre-created
-# ones; issuer client IDs/secrets live in the Moodle admin UI only (see
-# infra/hetzner/DEPLOY.md), never in the repo or .env.
+# ones. When MOODLE_GOOGLE_OAUTH_CLIENT_ID/SECRET are set in .env (which is
+# never committed), the Google issuer is converged from them; otherwise the
+# issuer is managed in the admin UI (see infra/hetzner/DEPLOY.md).
 #
 # Passwordless local login is decided by the live wwwroot, failing closed in
 # both directions:
@@ -39,6 +40,32 @@ dc exec -T moodle php -r '
   define("CLI_SCRIPT", true);
   require "/var/www/html/config.php";
   \core\plugininfo\auth::enable_plugin("oauth2", 1);'
+
+if [ -n "${MOODLE_GOOGLE_OAUTH_CLIENT_ID:-}" ] && [ -n "${MOODLE_GOOGLE_OAUTH_CLIENT_SECRET:-}" ]; then
+  log "Converging the Google OAuth 2 issuer from .env."
+  dc exec -T \
+    -e MOODLE_GOOGLE_OAUTH_CLIENT_ID="$MOODLE_GOOGLE_OAUTH_CLIENT_ID" \
+    -e MOODLE_GOOGLE_OAUTH_CLIENT_SECRET="$MOODLE_GOOGLE_OAUTH_CLIENT_SECRET" \
+    moodle php -r '
+    define("CLI_SCRIPT", true);
+    require "/var/www/html/config.php";
+    \core\session\manager::set_user(get_admin());
+    $google = \core\oauth2\issuer::get_record(["servicetype" => "google"]);
+    if (!$google) {
+        $google = \core\oauth2\api::create_standard_issuer("google");
+    }
+    $google->set("clientid", getenv("MOODLE_GOOGLE_OAUTH_CLIENT_ID"));
+    $google->set("clientsecret", getenv("MOODLE_GOOGLE_OAUTH_CLIENT_SECRET"));
+    // No link-confirmation email: Google only asserts addresses it has
+    // verified, unknown addresses are refused by authpreventaccountcreation,
+    // and the mail would be captured (local) or diverted (staging) anyway.
+    $google->set("requireconfirmation", 0);
+    $google->set("showonloginpage", \core\oauth2\issuer::EVERYWHERE);
+    $google->set("enabled", 1);
+    $google->update();'
+else
+  log "MOODLE_GOOGLE_OAUTH_CLIENT_ID/SECRET not set in .env; leaving the Google issuer to the admin UI."
+fi
 
 if [ "$loopback" = 1 ]; then
   log "Loopback wwwroot (${wwwroot}): enabling passwordless local login."

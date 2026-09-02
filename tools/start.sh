@@ -51,6 +51,11 @@ MOODLE_ADMIN_PASSWORD=Change-me!
 MOODLE_ADMIN_FORCE_PASSWORD_CHANGE=0
 MOODLE_NOREPLY_EMAIL=noreply@example.com
 
+# Optional Google SSO for this local instance; see .env.example. Redirect
+# URI: http://localhost:8000/admin/oauth2callback.php
+MOODLE_GOOGLE_OAUTH_CLIENT_ID=
+MOODLE_GOOGLE_OAUTH_CLIENT_SECRET=
+
 # Marks every page as this being the local instance (green tint and badge).
 MOODLE_ENV_LABEL=LOCAL
 MOODLE_ENV_COLOUR=#2e7d32
