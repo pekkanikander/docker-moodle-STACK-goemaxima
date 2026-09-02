@@ -158,8 +158,22 @@ content-creation phase, so this fits in the next few weeks):
       and the API key confined to a dedicated Claude Platform workspace
       capped at 10 USD/month. Rejected as disproportionate: append-only
       archives beyond that, baselining/diffing dumps.
-- [ ] Server hardening leftovers: fail2ban (or equivalent), minimal monitoring
-      (disk-usage threshold, external uptime check), HSTS once stable.
+- [x] Server hardening leftovers: done 2026-09-02. HSTS enabled (max-age
+      180 d, no includeSubDomains/preload, so the later domain move stays
+      unconstrained). sshd tightened (`MaxAuthTries 3`, `LoginGraceTime 20`);
+      the hardening drop-in moved from cloud-init into the repo
+      (`infra/hetzner/sshd/`), installed by `server-bootstrap.sh` so the
+      running VM converges via the normal deploy path. fail2ban skipped by
+      decision: with key-only auth on a firewalled non-default port it is
+      log-noise reduction only, at the cost of a daemon plus its own nftables
+      machinery on a host with no local firewall; the built-in replacement is
+      OpenSSH `PerSourcePenalties` (see Version watch). Monitoring: a daily
+      dead-man check (`moodle-health.timer`, 07:00 UTC — disk usage on `/`
+      and `/srv/moodle-persistent`, DB-dump freshness, the public login page
+      through Caddy/TLS) pings healthchecks.io only when healthy; a missed
+      ping emails. Daily granularity is the accepted detection bound;
+      minutes-level external uptime monitoring deferred to M7. Runbook in
+      `infra/hetzner/DEPLOY.md` §11.
 - [ ] Full from-MBP disaster restore drill, when worth destroying the server.
 
 ## M7 — Possible extensions (not planned yet)
@@ -183,11 +197,16 @@ content-creation phase, so this fits in the next few weeks):
 - Moodle 5.2 line migration (no pressure from the AI side: the adopted
   provider supports 5.0–5.2).
 - Renovate (or similar) update PRs, grouped and CI-gated.
+- Fine-grained external HTTP uptime monitoring (minutes-level checks, e.g.
+  UptimeRobot); the daily dead-man ping only bounds outages to a day.
 
 ## Version watch
 
 - STACK 4.13.1 needs stackmaxima 2026080600; bump when goemaxima ships a
   matching release (see `versions.yml`).
+- OpenSSH `PerSourcePenalties` (built-in auth-failure throttling, the
+  fail2ban replacement) needs OpenSSH ≥ 9.8; Ubuntu 24.04 ships 9.6. Enable
+  in `infra/hetzner/sshd/99-hardening.conf` when available.
 
 ## Related documents
 

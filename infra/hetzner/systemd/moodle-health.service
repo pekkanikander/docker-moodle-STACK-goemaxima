@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily dead-man health check (pings healthchecks.io on success)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/moodle-stack
+ExecStart=/opt/moodle-stack/infra/hetzner/scripts/server-health.sh

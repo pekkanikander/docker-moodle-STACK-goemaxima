@@ -37,10 +37,11 @@ Notes:
   only after cloud-init finishes** (several minutes). If locked out, use the
   Console's web terminal (">_" icon on the server page).
 - Cloud-init creates user `admin` (key-only, passwordless sudo; auto-login on
-  the Hetzner web console), hardens sshd, installs Docker + compose v2 + Caddy
-  + yq, bind-mounts the volume to `/srv/moodle-persistent`, clones this repo to
-  `/opt/moodle-stack`, installs the Caddy vhost, and builds/pulls the images
-  (`server-bootstrap.sh`). This takes a while; `cloud-init status --wait` on
+  the Hetzner web console), disables root SSH login and password auth, installs
+  Docker + compose v2 + Caddy + yq, bind-mounts the volume to
+  `/srv/moodle-persistent`, clones this repo to `/opt/moodle-stack`, and runs
+  `server-bootstrap.sh` (Caddy vhost, the sshd hardening drop-in from
+  `infra/hetzner/sshd/`, the systemd timers, image build/pull). This takes a while; `cloud-init status --wait` on
   the VM tells when it is done.
 - The create script also drops stale `~/.ssh/known_hosts` entries for the
   server's DNS name and IPs (a recreated server has new host keys).
@@ -265,13 +266,61 @@ Done on oivus.pnr.iki.fi 2026-08-26.
 - Log in as admin; *Site administration → Plugins → Question types → STACK*
   health check passes (Maxima connection).
 
+## 11. Monitoring: dead-man health check
+
+`moodle-health.timer` (installed and enabled by `server-bootstrap.sh`) runs
+`infra/hetzner/scripts/server-health.sh` daily at 07:00 UTC. The script
+checks disk usage on `/` and `/srv/moodle-persistent` (< 85%), that the
+newest DB dump is younger than 26 h (the backup runs at 03:30), and that
+`https://oivus.pnr.iki.fi/login/index.php` answers through Caddy (which also
+catches an expiring certificate). Only when everything passes does it ping a
+healthchecks.io URL; a missed ping — a failed check, a dead VM, a broken
+timer — triggers healthchecks.io's alert email. There is deliberately no
+mail path on the VM itself.
+
+One-time setup:
+
+1. Sign up at https://healthchecks.io (free tier) and create a check, e.g.
+   "oivus health": *Simple* schedule, period **1 day**, grace **6 h** (absorbs
+   timer jitter and `Persistent=true` catch-up runs). Ensure the email
+   integration is on.
+
+2. On the VM, add the check's ping URL to `/opt/moodle-stack/.env` (the file
+   is already chmod 600; the URL stays out of the repo — anyone holding it
+   can fake "healthy" pings):
+
+   ```
+   HEALTHCHECKS_PING_URL=https://hc-ping.com/<uuid>
+   ```
+
+   Until it is set, the timer runs but the unit fails visibly — intended.
+
+3. Verify the first ping: `sudo systemctl start moodle-health.service`, then
+   confirm the check shows a fresh ping in the healthchecks.io UI.
+
+4. Verify the failure path once:
+
+   ```sh
+   sudo DISK_LIMIT_PCT=0 /opt/moodle-stack/infra/hetzner/scripts/server-health.sh
+   ```
+
+   must exit non-zero without pinging; then use healthchecks.io's *Send test
+   notification* to confirm email delivery end to end.
+
+Hardening spot-checks (after any deploy that touches these):
+
+```sh
+curl -sI https://oivus.pnr.iki.fi | grep -i strict-transport-security  # max-age=15552000
+ssh moodle-hetzner sudo sshd -T | grep -iE 'maxauthtries|logingracetime'  # 3 / 20
+```
+
 ## Updating later
 
 An installed server is updated by checking out the new commit and running
 `infra/hetzner/scripts/server-update.sh`. Both the automated and the manual
 update path (below) use that same script; it performs a database backup,
-re-runs `server-bootstrap.sh` (as root: Caddyfile, backup units,
-`.env.versions`, image build), then `up -d`, `upgrade.php`, the idempotent
+re-runs `server-bootstrap.sh` (as root: Caddyfile, sshd drop-in, backup and
+health units, `.env.versions`, image build), then `up -d`, `upgrade.php`, the idempotent
 `lang-init.sh`, `mail-init.sh`, `stack-init.sh`, `auth-init.sh` and
 `appearance-init.sh` (the same convergence `tools/start.sh` runs locally), the
 smoke tests, and an external check of the public site URL. It fails fast and

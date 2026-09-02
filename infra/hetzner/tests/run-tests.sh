@@ -164,6 +164,7 @@ grep -q 'HostName tail.example.org' "$cfg" || fail "following host block damaged
 for s in infra/hetzner/scripts/server-bootstrap.sh \
          infra/hetzner/scripts/deploy-cmd.sh \
          infra/hetzner/scripts/server-update.sh \
+         infra/hetzner/scripts/server-health.sh \
          init/scripts/backup-db.sh \
          init/scripts/restore-db.sh infra/mbp/deploy.sh \
          infra/mbp/bin/mbp-sync.sh infra/mbp/bin/mbp-restore-db.sh \

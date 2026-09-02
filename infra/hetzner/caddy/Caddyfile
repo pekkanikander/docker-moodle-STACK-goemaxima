@@ -2,12 +2,14 @@
 #
 # - TLS certificates via automatic Let's Encrypt (HTTP-01); port 80 must stay open.
 # - HTTP -> HTTPS redirect is automatic in Caddy.
-# - No HSTS until go-live is stable (see ROADMAP.md, server hardening leftovers).
 
 oivus.pnr.iki.fi {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8000
 	header {
+		# 180 d; no includeSubDomains/preload, to keep the later move to an
+		# own domain unconstrained.
+		Strict-Transport-Security "max-age=15552000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server

@@ -4,7 +4,8 @@
 #
 # Design goals (baseline):
 # - Create admin user with SSH key auth
-# - Disable root SSH login + password authentication
+# - Disable root SSH login + password authentication (the full sshd hardening
+#   drop-in is installed by server-bootstrap.sh from infra/hetzner/sshd/)
 # - Keep systemd socket activation for SSH, listening on:
 #     - 22   (can be firewalled off at Hetzner later)
 #     - 33101 (primary SSH port to expose)
@@ -79,24 +80,6 @@ snap:
     - snap install yq
 
 write_files:
-  # SSH hardening policy in a drop-in (Ubuntu style).
-  - path: /etc/ssh/sshd_config.d/99-hardening.conf
-    owner: root:root
-    permissions: '0644'
-    content: |
-      # Managed by cloud-init
-      PermitRootLogin no
-      PasswordAuthentication no
-      KbdInteractiveAuthentication no
-      PubkeyAuthentication yes
-      ChallengeResponseAuthentication no
-      UsePAM yes
-      X11Forwarding no
-
-      # Optional tightening (uncomment if desired):
-      # MaxAuthTries 3
-      # LoginGraceTime 20
-
   # Override ssh.socket to listen on both ports.
   # systemd socket activation owns the listeners; sshd_config "Port" lines become secondary.
   - path: /etc/systemd/system/ssh.socket.d/override.conf
