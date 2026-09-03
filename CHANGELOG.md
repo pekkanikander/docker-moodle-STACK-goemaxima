@@ -3,7 +3,7 @@
 Notable changes per release. Versioning follows [SemVer](https://semver.org/);
 pre-1.0, minor versions may break anything.
 
-## [0.2.0] — 2026-09-02
+## [0.2.0] — 2026-09-03
 
 From proof of concept to a system running a real (staging) site.
 
