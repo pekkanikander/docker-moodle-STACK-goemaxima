@@ -38,13 +38,16 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - Sibling repos, checked out next to this one: `oivus-questions` (question
   content), `moodle-qtype_aitext_rubric` (our qtype, forked from
   marcusgreen/moodle-qtype_aitext) and `moodle-local_aitextflags` (companion
-  plugin), the latter two for the TASK-02 essay-drilling extension.
+  plugin), the latter two for the AI essay-drilling extension.
 - `.github/workflows/ci.yml` for end-to-end CI.
 - `README.md` for quickstart and update policy.
 - `ROADMAP.md` for milestones and current priorities.
 - `tools/act-ci.sh` for local CI via `act`.
-- `notes/` for task briefs for upcoming work (rationale for settled decisions
-  lives as comments in `versions.yml` and the code, not here).
+- `notes/` for `LESSONS-LEARNED.md` (decisions with their rejected
+  alternatives, and platform facts verified against the pinned tuple), the
+  surveys behind deferred decisions, and the AI-grading walkthrough. Task
+  briefs live here while their work is in flight and are retired into
+  `LESSONS-LEARNED.md` at release; see `notes/README.md`.
 - `infra/hetzner/` for VM provisioning (cloud-init, hcloud helper); runbook in `infra/hetzner/DEPLOY.md`.
 - `infra/BACKUP.md` for the backup/restore architecture; `infra/mbp/` holds the
   master copies deployed to `~/Sites/oivus.pnr.iki.fi` by `infra/mbp/deploy.sh`.

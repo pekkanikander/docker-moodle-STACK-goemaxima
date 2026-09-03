@@ -7,3 +7,7 @@
 .claude/settings.local.json
 .generated/
 NOW.md
+
+# Python bytecode
+__pycache__/
+*.pyc

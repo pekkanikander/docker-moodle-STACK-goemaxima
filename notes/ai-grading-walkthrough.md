@@ -1,13 +1,16 @@
-# Study note: how the AI grading interface works, end to end
+# AI grading, end to end: one student answer, file by file
 
 Audience: someone fluent in systems programming who has never written PHP and
 has never called an LLM through an API. This traces one student answer from
 submission to feedback, naming every file on the way so the source can be read
-in order. Paths marked *(fork)* are in `../moodle-qtype_aitext_rubric`
-(since renamed into the separate component `qtype_aitext_rubric`; class
-names in this note keep the old `qtype_aitext` prefix); paths marked
-*(container)* are inside the running `moodle` container under
-`/var/www/html/public/`.
+in order. Paths marked *(plugin)* are in the sibling repo
+`../moodle-qtype_aitext_rubric` (class names in this note keep the historical
+`qtype_aitext` prefix); paths marked *(container)* are inside the running
+`moodle` container under `/var/www/html/public/`.
+
+Written against Moodle 5.1.6 and `aiprovider_claude` 1.0.4; the shape of the
+call chain is stable, but line numbers and class names are not — re-read the
+source if `versions.yml` has moved since.
 
 ## 0. PHP in ten lines, for a C programmer
 
@@ -91,12 +94,12 @@ Points that matter for reading our code:
 
 ```
 student clicks Submit
-  → question behaviour (adaptive / immediate feedback, vendored in the fork)
-    → qtype_aitext_question::grade_response()            question.php (fork)
+  → question behaviour (adaptive / immediate feedback, vendored with the plugin)
+    → qtype_aitext_question::grade_response()            question.php (plugin)
       → qtype_aitext_question::grade_response_with_rubric()
         → rubric::parse()      validates the stored rubric JSON
-        → rubric::build_prompt()                          classes/local/rubric.php (fork)
-        → qtype_aitext_question::perform_request()        question.php (fork)
+        → rubric::build_prompt()                          classes/local/rubric.php (plugin)
+        → qtype_aitext_question::perform_request()        question.php (plugin)
           → new \core_ai\aiactions\generate_text(...)     ai/classes/aiactions/generate_text.php (container)
           → \core_ai\manager::process_action()            ai/classes/manager.php (container)
             → call_action_provider()                      assembles processor class name by string
@@ -105,7 +108,7 @@ student clicks Submit
                 ← handle_api_success()                    unpacks content[].text, usage, model
         ← rubric::grade()      parses + validates the model's JSON verdict
         → mark = Σ level / Σ max, computed in PHP
-        → Mustache render of templates/rubric_feedback.mustache (fork)
+        → Mustache render of templates/rubric_feedback.mustache (plugin)
         → $this->lastaicomment = rendered HTML
     ← behaviour's process_finish() stores lastaicomment as behaviour var _comment
   → behaviour renderer shows _comment to the student (until a teacher overrides)
@@ -113,7 +116,7 @@ student clicks Submit
 
 Read it in that order and each layer is small.
 
-## 3. The plugin layer (fork)
+## 3. The question-type plugin
 
 `question.php` holds `qtype_aitext_question`. One object = one question
 instance being attempted. The properties (`$this->rubric`,
@@ -205,8 +208,8 @@ full — it is the exact seam between Moodle and the vendor:
   hands back. `generatedcontent` is the field `perform_request()` extracts.
 
 Nothing in the qtype knows any of this. Swapping Anthropic for another vendor
-means configuring a different provider instance; the fork does not change.
-That was the point of going through the subsystem (M5 decision).
+means configuring a different provider instance; the question type does not
+change. That was the point of going through the subsystem (M5 decision).
 
 ## 6. The trip back up
 
@@ -230,12 +233,12 @@ comment exists. Display modes (Feature 3) never reach the model: `none`,
 
 | Step | File | What to look for |
 | --- | --- | --- |
-| 1 | *(fork)* `classes/local/rubric.php` | the whole grading contract, no Moodle noise |
-| 2 | *(fork)* `question.php`, `grade_response()` onwards | the three fail-closed exits |
+| 1 | *(plugin)* `classes/local/rubric.php` | the whole grading contract, no Moodle noise |
+| 2 | *(plugin)* `question.php`, `grade_response()` onwards | the three fail-closed exits |
 | 3 | *(container)* `ai/classes/aiactions/generate_text.php` | how small an "action" is |
 | 4 | *(container)* `ai/classes/manager.php`, `process_action()` | dispatch, logging, provider fallback |
 | 5 | *(container)* `ai/provider/claude/classes/process_generate_text.php` | the actual wire format |
-| 6 | *(fork)* `templates/rubric_feedback.mustache` | what the student sees |
+| 6 | *(plugin)* `templates/rubric_feedback.mustache` | what the student sees |
 | 7 | `qbank/cli/aitext-test.php` (this repo) | the harness driving it all headlessly |
 
 To open a container file:

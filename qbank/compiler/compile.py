@@ -57,7 +57,7 @@ UNIT_FALLBACK_TESTINPUT = "1000*ta*ms/s"
 SCAFFOLDS = ("stated", "choice", "none")
 
 # AI-graded explanation questions (type: aitext). Bounds per
-# notes/aitext-rubric-design.md: few small judgements grade reliably, one
+# the plugin's docs/rubric-design.md: few small judgements grade reliably, one
 # big one does not. Three levels is the intended default; two is a strict
 # met/not-met criterion.
 AITEXT_CRITERIA_RANGE = (2, 5)

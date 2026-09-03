@@ -1,8 +1,8 @@
 # Survey: Anthropic (Claude) provider for the Moodle AI subsystem
 
-Phase A deliverable for `TASK-01-anthropic-aiprovider.md`. Survey date: 2026-08-26.
-(The task brief names `docs/reports/aiprovider-survey.md` as the deliverable
-path; recorded here in `notes/` as requested at execution time.)
+Survey date: 2026-08-26. Decision gate for adopting an Anthropic provider
+rather than writing one; the outcome is summarised in
+[`LESSONS-LEARNED.md`](LESSONS-LEARNED.md).
 
 ## Target Moodle version
 

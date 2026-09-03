@@ -1,7 +1,8 @@
 # Survey: Sign in with Apple for Moodle 5.1
 
-Decision-gate deliverable for `TASK-07-sso-and-localhost-auth.md` (Known
-obstacles: Apple). Survey date: 2026-09-01.
+Survey date: 2026-09-01. Decision gate for the SSO work: Google was
+straightforward, Apple was not, and this records why Apple was deferred and
+what would reopen it.
 
 ## Target Moodle version
 
@@ -55,7 +56,7 @@ alone in 5.1. **No — verified in source:**
    POST as well as GET. Confirmed working in the tracker discussion.
 4. **Name arrives only once, outside the token.** Apple sends the user's
    name as a `user` POST field in the *first* authorisation response only;
-   core drops it. Cosmetic for TASK-07 (accounts are pre-created with names),
+   core drops it. Cosmetic here (accounts are pre-created with names),
    fatal for general deployments.
 
 So blocker 1 is fatal on its own; the rest grade from chore to cosmetic.
@@ -129,7 +130,7 @@ contributed plugin exists; the core patch is unlanded and still moving; a
 broker works but buys a cloud dependency plus 99 USD/year to duplicate what
 Google sign-in already provides for this student.
 
-**Recommendation:** go Google-only for TASK-07, per the gate's fallback.
+**Recommendation:** go Google-only, per the gate's fallback.
 Revisit triggers, checked at each Moodle version bump:
 
 1. MDL-70109 gains a fix version (then Apple arrives as a core issuer

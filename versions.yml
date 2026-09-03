@@ -58,9 +58,10 @@ aiprovider_claude_url: "https://github.com/ashishptl21/moodle-aiprovider_claude/
 aiprovider_claude_sha256: "01da5cd37cdc36a3e53d8e0f8abda0446ed0da85ea2e551bdd8a555ff6ca667a"
 
 # aitext_rubric (AI-graded free text with a criterion rubric; our fork of
-# qtype_aitext, notes/TASK-02) and its two required behaviour adapter
-# plugins (also our forks: upstream's is_compatible_question() ties them to
-# qtype_aitext; the forks drop that check, PRs are open upstream).
+# qtype_aitext; rationale in notes/LESSONS-LEARNED.md) and its two required
+# behaviour adapter plugins (also our forks: upstream's
+# is_compatible_question() ties them to qtype_aitext; the forks drop that
+# check, PRs are open upstream).
 # The qtype is pinned to its release tag; the behaviour forks carry no tags
 # yet, so they are pinned by commit SHA. The local_aitextflags companion
 # (flag-for-teacher) is likewise pinned by commit SHA until first tagged.

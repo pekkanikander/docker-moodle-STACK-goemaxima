@@ -1,6 +1,6 @@
 # Development overlay: mount the qtype_aitext_rubric and local_aitextflags
 # working copies into the image, for the inner dev loop of the drilling
-# extension (see notes/aitext-extension-architecture.md). Not for CI or
+# extension (see notes/ai-grading-walkthrough.md). Not for CI or
 # the server; versions.yml pins move to release tags / commit SHAs at
 # commit boundaries instead.
 #
