@@ -400,6 +400,30 @@ One-time setup:
      --body "$(ssh-keygen -F '[oivus.pnr.iki.fi]:33101' | grep -v '^#')"
    ```
 
+4. Give the server an authenticated route back to GitHub. Cloud-init clones
+   over anonymous HTTPS, and GitHub throttles that ("GitHub is temporarily
+   limiting some unauthenticated downloads"), which fails the deploy at
+   `git fetch`. On the VM:
+
+   ```sh
+   ssh moodle-hetzner /opt/moodle-stack/infra/hetzner/scripts/server-github-key.sh
+   ```
+
+   On a server whose checkout predates this script — the deploy that would
+   have delivered it is the one being throttled — pipe it in from your Mac
+   instead:
+
+   ```sh
+   ssh moodle-hetzner 'sh -s' < infra/hetzner/scripts/server-github-key.sh
+   ```
+
+   The first run generates `~/.ssh/github_deploy_ed25519`, prints its public
+   key and stops. Add that key at *repo → Settings → Deploy keys → Add deploy
+   key*, leaving *Allow write access* unticked, then re-run the script: it
+   pins GitHub's host keys, switches `origin` to the SSH remote and fetches.
+   A deploy key is per-repository and read-only, so it grants nothing beyond
+   this repo.
+
 ### Manual update
 
 As an alternative to the Github Actions based automated update,
