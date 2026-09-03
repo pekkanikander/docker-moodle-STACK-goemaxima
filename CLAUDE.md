@@ -10,7 +10,7 @@ The setup serves exam drilling and question-interpretation training for a homesc
 - Prefer pinned tags (optionally digests); avoid `latest`.
 - Keep `docker compose up -d` reproducible.
 - No secrets in the repo; use `.env.example` and GitHub Actions secrets.
-  The Anthropic API key is set only via the Moodle admin UI, never in code or env.
+  The Anthropic API key and SMTP credentials are set only via the Moodle admin UI, never in code or env.
 - Fail fast; do not mask errors in scripts or CI.
 - Build a custom Moodle image from a pinned PHP base + Moodle release tarball checksum.
 - Keep the Moodle code tree read-only at runtime as a goal until validated.
@@ -50,7 +50,7 @@ The setup serves exam drilling and question-interpretation training for a homesc
   master copies deployed to `~/Sites/oivus.pnr.iki.fi` by `infra/mbp/deploy.sh`.
 
 ## Workflow guidance
-- We are in an early pre-alpha stage. Prefer regenerating everything from scratch. There are no precious data, yet.
+- We are in a pre-alpha stage. Prefer regenerating everything from scratch. There are no precious data, yet.
 - When bumping versions, update `versions.yml` and `compatibility.yml` together.
 - When changing Moodle/STACK versions, also update the Dockerfile inputs and checksums.
 - Keep init scripts usable both locally and in CI.

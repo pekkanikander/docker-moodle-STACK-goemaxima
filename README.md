@@ -26,24 +26,29 @@ on a staging server — but expect breaking changes and no upgrade path between
 versions. Public domain ([the Unlicense](LICENSE)).
 
 The no-terminal quickstart below is macOS-only; the command-line quickstart
-works anywhere Docker Compose runs. There is no Windows launcher yet.
+works anywhere Docker Compose runs. There is no Windows launcher.
 
 No support: this is a personal project, maintained as the learner's needs
 dictate. Issues and PRs are read but may go unanswered. That said, if you
 find this useful, a short note would be appreciated.
 
+Note well: this project has been mostly developed with Claude Fable 5.
+Some parts of the code have never been read by human eyes.
+
 ## Quickstart (no terminal needed)
 
 1. Install this repository
-   1.1. Download [GitHub Desktop](https://desktop.github.com/) and start it.
-      If you don't have and don't want a GitHub account,
-      select "Skip this step" on the registration pane.
-   1.2. In GitHub Desktop choose `File → Clone repository → URL`,
-      paste https://github.com/pekkanikander/docker-moodle-STACK-goemaxima,
-      and click Clone.
-      The clone lands in `~/Documents/GitHub/docker-moodle-STACK-goemaxima` by default.
 
-      Do **not** download the repository as a ZIP: macOS quarantines the
+    Download [GitHub Desktop](https://desktop.github.com/) and start it.
+    If you don't have and don't want a GitHub account,
+    select "Skip this step" on the registration pane.
+
+    In GitHub Desktop choose `File → Clone repository → URL`,
+    paste https://github.com/pekkanikander/docker-moodle-STACK-goemaxima,
+    and click Clone.
+    The clone lands in `~/Documents/GitHub/docker-moodle-STACK-goemaxima` by default.
+
+    Do **not** download the repository as a ZIP: macOS quarantines the
       unpacked files and refuses to run the setup app.
 
 2. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
