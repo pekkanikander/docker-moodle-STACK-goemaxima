@@ -7,11 +7,12 @@ excluding) the `.env` secrets and the init scripts.
 ## 0. Deploying your own host instead
 
 This runbook provisions `oivus.pnr.iki.fi`. To deploy a different hostname,
-edit it in three places (parametrising these is on the roadmap, M7):
+edit it in four places (parametrising these is on the roadmap, M7):
 
 - `infra/hetzner/scripts/server-bootstrap.sh` (the `MOODLE_SITE_URL` seed)
 - `infra/hetzner/caddy/Caddyfile` (the vhost)
 - `.github/workflows/deploy-staging.yml` (`DEPLOY_HOST`)
+- `oivus-questions`' own `.github/workflows/deploy-staging.yml` (`DEPLOY_HOST`)
 
 `ssh-keygen.sh` and `hcloud-create.sh` already take the hostname as an
 environment variable. §3 (easyDNS), the `smtp.iki.fi` relay in §6 and the
@@ -423,6 +424,100 @@ One-time setup:
    pins GitHub's host keys, switches `origin` to the SSH remote and fetches.
    A deploy key is per-repository and read-only, so it grants nothing beyond
    this repo.
+
+### Deploying question content (GitHub Actions)
+
+Question content lives in the sibling repo `oivus-questions` and is deployed
+independently of the stack, by a workflow **in that repo**:
+
+```sh
+gh workflow run deploy-staging.yml -f ref=main   # run from the content repo
+```
+
+(or *Actions → Deploy content to staging → Run workflow*). It resolves the ref
+to a commit SHA through the API and SSHes in with a second restricted deploy
+key, forced to `infra/hetzner/scripts/deploy-content-cmd.sh`. That script
+checks the SHA out in `/opt/oivus-questions` and runs
+
+```sh
+QBANK_CONTENT_DIR=/opt/oivus-questions ./tools/qbank.sh all
+```
+
+from `/opt/moodle-stack`: compile, import, build the quizzes, then the STACK
+question tests and the figure tests. A question that fails its own tests fails
+the deploy — that is the gate, so the content repo has no CI of its own.
+
+There is no `moodle-init.sh`, no `up -d` and no `upgrade.php` here: a content
+deploy does not restart the site. It does hold the same
+`~/.moodle-deploy.lock` as `deploy-cmd.sh`, so a stack update and a content
+import cannot interleave; the loser exits 75.
+
+Because the server checkout is clean and detached at the deployed SHA, the
+compiler stamps exact provenance (`src-<sha>` per question) and the importer's
+refusal to import a dirty build never has to be waived.
+
+Note that the import runs the question tests *after* importing. A question that
+passes locally but fails on staging is already in the bank when the job goes
+red; fix it and deploy again. Rollback is the same operation with an earlier
+content SHA (each deploy log prints the outgoing one as `previous:`), which
+re-imports the older wording as a new question version — existing attempts stay
+bound to the version they were answered against.
+
+One-time setup:
+
+1. Give the server a read-only GitHub deploy key for the content repo, which is
+   private. `server-github-key.sh` is parametrised, so it does the work:
+
+   ```sh
+   ssh moodle-hetzner
+   REPO_DIR=/opt/oivus-questions \
+   KEY_PATH=$HOME/.ssh/github_content_deploy_ed25519 \
+   REMOTE_URL=git@github.com:pekkanikander/oivus-questions.git \
+     /opt/moodle-stack/infra/hetzner/scripts/server-github-key.sh
+   ```
+
+   The first run generates the key, prints it and stops before touching
+   `REPO_DIR`. Register it at *oivus-questions → Settings → Deploy keys → Add
+   deploy key*, *Allow write access* unticked.
+
+2. Clone the content repo, using that key (it is private, so anonymous HTTPS
+   will not do):
+
+   ```sh
+   sudo install -d -o admin -g admin /opt/oivus-questions
+   GIT_SSH_COMMAND="ssh -i $HOME/.ssh/github_content_deploy_ed25519 -o IdentitiesOnly=yes -o UserKnownHostsFile=$HOME/.ssh/github_known_hosts" \
+     git clone git@github.com:pekkanikander/oivus-questions.git /opt/oivus-questions
+   ```
+
+   Then re-run the command from step 1: with `REPO_DIR` now a checkout it pins
+   `core.sshCommand`, switches `origin` to the SSH remote and fetches.
+
+3. Generate a second GitHub Actions deploy key on your Mac. Do not reuse the
+   stack one: `authorized_keys` binds one forced command per key, and that is
+   what keeps a content key from deploying code.
+
+   ```sh
+   ssh-keygen -t ed25519 -a 64 -f ~/.ssh/to_moodle_hetzner_content_deploy_ed25519 \
+     -C oivus-questions-deploy-gha -N ""
+   ```
+
+   Append to `/home/admin/.ssh/authorized_keys`, as one line:
+
+   ```
+   restrict,command="/opt/moodle-stack/infra/hetzner/scripts/deploy-content-cmd.sh" ssh-ed25519 <pubkey> oivus-questions-deploy-gha
+   ```
+
+4. Create the `staging` environment and its secrets in the *content* repo. Same
+   names as above, different key:
+
+   ```sh
+   gh api -X PUT repos/pekkanikander/oivus-questions/environments/staging
+   gh secret set DEPLOY_SSH_KEY --env staging \
+     < ~/.ssh/to_moodle_hetzner_content_deploy_ed25519
+   gh secret set DEPLOY_PORT --env staging --body 33101
+   gh variable set DEPLOY_KNOWN_HOSTS --env staging \
+     --body "$(ssh-keygen -F '[oivus.pnr.iki.fi]:33101' | grep -v '^#')"
+   ```
 
 ### Manual update
 

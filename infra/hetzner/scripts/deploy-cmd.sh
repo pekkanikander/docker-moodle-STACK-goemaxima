@@ -15,6 +15,12 @@ main() {
   esac
   [ "${#sha}" -eq 40 ] || { echo "ERROR: expected a full 40-hex commit SHA" >&2; exit 64; }
 
+  # One deploy at a time, shared with deploy-content-cmd.sh: a stack update and
+  # a content import both drive the same running Moodle. fd 9 survives the exec
+  # below, so the lock is held for the whole run.
+  exec 9>"$HOME/.moodle-deploy.lock"
+  flock -n 9 || { echo "ERROR: another deploy is running" >&2; exit 75; }
+
   cd /opt/moodle-stack
   git fetch --tags origin
   git rev-parse --verify --quiet "$sha^{commit}" > /dev/null \

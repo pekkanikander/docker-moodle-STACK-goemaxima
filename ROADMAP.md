@@ -108,6 +108,15 @@ choices in `notes/LESSONS-LEARNED.md`.
   deploy if any active account accepts an empty password. Apple SSO surveyed
   (`notes/sso-apple-survey.md`) and deferred: Moodle 5.1 core cannot complete
   an Apple login.
+- **Content deploy** (2026-09-03): question content reaches staging by the same
+  shape as the stack — a workflow in `oivus-questions` SSHes a content SHA to a
+  second restricted key, forced to `deploy-content-cmd.sh`, which checks that
+  SHA out in `/opt/oivus-questions` and runs `qbank.sh all` from
+  `/opt/moodle-stack`. The question and figure tests are the gate, so the
+  content repo needs no CI; the clean detached checkout means provenance is
+  always exact. Both forced commands now share `~/.moodle-deploy.lock`, since a
+  stack update and a content import drive the same running Moodle.
+  `infra/hetzner/DEPLOY.md` §"Deploying question content".
 
 ## Open
 
@@ -153,16 +162,17 @@ Recorded so they are not rediscovered as fresh ideas. Reasoning in
 - Release-based deploy automation, remaining parts: GitHub release artefact
   with checksums, dedicated `deploy` user, root-owned update script with
   tight sudoers, automated rollback to last-known-good. Already done: the
-  CI-gated staging deploy workflow (`deploy-staging.yml`), a forced-command
-  deploy key on the admin account, and the committed update script
+  CI-gated staging deploy workflow (`deploy-staging.yml`), the content deploy
+  workflow in `oivus-questions`, forced-command deploy keys on the admin
+  account, and the committed update script
   (`infra/hetzner/scripts/server-update.sh`); see `infra/hetzner/DEPLOY.md`.
 - Real production at `oivus.fi` (or similar; domain not yet registered) —
   `oivus.pnr.iki.fi` is the staging environment. Before production go-live:
   set `display_errors=0` in the Moodle image (deliberately 1 for now, to
   surface errors while staging), and parametrise the deploy hostname —
   currently hardcoded in `infra/hetzner/scripts/server-bootstrap.sh`,
-  `infra/hetzner/caddy/Caddyfile` and
-  `.github/workflows/deploy-staging.yml` (see `DEPLOY.md` §0) — so staging
+  `infra/hetzner/caddy/Caddyfile` and the two `deploy-staging.yml` workflows,
+  here and in `oivus-questions` (see `DEPLOY.md` §0) — so staging
   and production deploy from the same scripts, which also unhardcodes it
   for forks.
 - Moodle 5.2 line migration (no pressure from the AI side: the adopted
